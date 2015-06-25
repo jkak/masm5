@@ -12,6 +12,7 @@
    + 连接器：Overlay Linker 3.60
    + 调试器：debug.exe
 
+
     书中的代码都是基本在windows环境的。当然在windows下也可以完全使用上述的dosbox, masm, linker, debug等工具。这方面的环境书上或者网上都可以找到，此处从略。 
 
     2015年６月25日
