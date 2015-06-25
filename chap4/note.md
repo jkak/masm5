@@ -9,7 +9,7 @@ vim ./chap4/ex3.asm
 
 ```
 
-以下在dos环境下操作。
+以下在dos环境下操作。如果之前先打开了dosbox环境，则刚才新建立的ex3.asm文件在dosbox中看不到。此时可以对dosbox操作使用ctrl+F4来刷新mount，从而可以看到最新的文件。
 
 ```dos
 asm.bat  chapt4/ex3.asm  ex3
