@@ -4,7 +4,7 @@
 　　具体环境如README.md中说明。
 
 ## 汇编器调试器等
-汇编器使用masm 5.0。可以参考如下[链接](http://blog.fishc.com/602.html)。该链接的5.0版本已经包括了masm.exe, linker.exe。另外需要win7 32位的debug.exe。以上已经都包括在本项目的tools/目录中。
+汇编器使用masm 5.0。可以参考如下[链接](http://blog.fishc.com/602.html)。该链接的5.0版本已经包括了masm.exe, link.exe。另外需要win7 32位的debug.exe。以上已经都包括在本项目的tools/目录中。
 　
 增加asm.bat文件。用来一次完成对源文件的汇编和连接，以直接生成可执行文件。文件内容直接查看即可。使用方法，在dosbox中直接运行：
 
