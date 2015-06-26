@@ -30,3 +30,44 @@
 
 
 2015年６月25日
+
+
+## 代码与章节对应关系
+
+### 第四章
+* ./chap4/ex3.asm   实验3
+* ./chap4/note.md
+
+### 第五章
+* ./chap5/6loop.asm   程序5.5, 5.6
+* ./chap5/ex4_1.asm   实验4.1
+* ./chap5/ex4_2.asm   实验4.2
+* ./chap5/ex4_3.asm   实验4.3
+* ./chap5/note.md
+
+### 第六章
+* ./chap6/ex5_1.asm   实验5.1
+* ./chap6/ex5_2.asm   实验5.2
+* ./chap6/ex5_3.asm   实验5.3
+* ./chap6/ex5_5.asm   实验5.5
+* ./chap6/note.md
+
+### 第七章
+* ./chap7/7ques6.asm  问题6
+* ./chap7/7ques7.asm  问题7
+* ./chap7/ex6.asm     实验6
+* ./chap7/note.md
+
+### 第八章
+* ./chap8/6dec.asm    程序6 dec公司数据
+* ./chap8/ex7.asm     实验7
+
+### 第九章
+* ./chap9/check1.asm  检查点9.1
+* ./chap9/check2.asm  检查点9.2
+* ./chap9/ex8.asm     实验8
+* ./chap9/ex9.asm     实验9
+* ./chap9/note.md
+
+### 第十章
+
