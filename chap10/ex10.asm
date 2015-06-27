@@ -61,9 +61,73 @@ line_done:
 
 
 
+; #############################################
+;   test of d2char. change DX:AX to char
+;   DS:SI for write result 
+	mov si, 10h
+	call d2char     ; 11124h -> 69924
+
+;   now string at ds:[si]
+	mov si, 10h
+	mov dh, 0fh
+	mov dl, 0fh
+	mov cl, 4h
+	call show_str
+
 
 	mov ax, 4c00h
 	int 21h
+
+; end of main
+; #############################################
+
+
+
+; #############################################
+; sub func: d2char
+; parameter:
+;	DX:AX is a Dword int
+;	DS:SI for write string addr
+d2char:
+    push ax
+	push bx
+	push cx
+    push dx
+	push si
+
+	mov bx, 0	; for counter
+div_lp:
+	mov cx, 0ah	; for div(divisor) and jcxz
+    call div_dw
+    add cx, 30h ; rem NUM --> ASCII code
+    push cx
+
+	inc bx	    ; counter
+	mov cx, dx	; dx is Quo high
+    jcxz chk_ax ; DX zero, go check AX
+    inc cx      ; except cx=1
+	jcxz div_lp
+chk_ax:
+    mov cx, ax      ; ax is Quo low
+    jcxz div_done   ; AX zero, done
+    jmp div_lp
+    ;inc cx          ; except cx=1
+	;loop div_lp	    ; use inc cl, and loop
+				    ; NOT use jmp div_lp
+div_done:
+	mov cx, bx	    ; counter
+wr_mem:
+	pop ds:[si]
+	inc si
+	loop wr_mem
+
+    mov word ptr ds:[si], 0h ; write the end flag!!!
+    pop si
+    pop dx
+	pop cx
+	pop bx
+    pop ax
+	ret
 
 
 
@@ -144,7 +208,6 @@ div_dw:
 	pop bx
 	pop si
 	ret
-
 
 
 
