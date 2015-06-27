@@ -51,6 +51,17 @@ line_done:
     nop
 
 
+
+; #############################################
+; test of div_dw    ; result: 11124h
+    mov ax, 0EEEEh
+    mov dx, 0FFFFh
+    mov cx, 0EFEFh
+    call div_dw
+
+
+
+
 	mov ax, 4c00h
 	int 21h
 
@@ -106,7 +117,38 @@ show_done:
 	ret
 
 
+; #############################################
+; sub func: div_dw 
+;   DX:AX: dividend higher:lower
+;   CX	 : divisor 
+; return 
+;   DX:AX quotient
+;   cx remainder
+; DX:AX/CX = int(DX/CX)*65536 + [rem(DX/CX)*65536+AX]/CX
+
+div_dw:
+	push si	; temp Quotient High
+	push bx	; for temp
+	push ax	; src lower
+
+	mov ax, dx	; high
+	mov dx, 0
+	div cx	    ; DX/CX: Quo in AX, Rem in DX
+	mov si, ax	; for quotient high
+
+	pop ax		; lower
+	div cx	    ; dx:ax/cx. Quo in AX, Rem in DX
+	mov cx, dx	; rem of result
+	mov dx, si	; dx:ax is quotient
+
+	pop bx
+	pop si
+	ret
+
+
+
 
 code_seg ends
 
 end start
+
