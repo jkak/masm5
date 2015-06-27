@@ -49,7 +49,7 @@ start:
 	mov ax, data_seg	; data
 	mov ds, ax
 
-	mov ax, 0B800H	; video entrance.
+	mov ax, 0B800H	    ; video entrance.
 	mov es, ax
 
 ; #############################################
@@ -62,14 +62,14 @@ start:
 
 ; #############################################
 ; init the screen before show data
-	mov bx, 2h
-	mov cx, 15h	; 21 lines
+    mov dh, 1h
+	mov cx, 15h	    ; 21 lines
 	call init_shown_screen
 
 
 ; #############################################
 ; show corp data
-; bx for start line, cx for lines, si for offset
+; dh for start line, cx for lines, si for offset
 	mov si, 110h
 	call show_corp_data
 
@@ -80,6 +80,162 @@ start:
 ; end of main
 ; #############################################
 
+
+
+
+; #############################################
+; sub func: init_shown_screen
+; parameter:
+;	DH for start line 
+;	CX for lines
+
+init_shown_screen:
+	push ax
+	push bx
+	push cx
+	push di
+
+	mov al, 0a0h
+	mul dh	
+	mov bx, ax	    ; start addr to show
+	mov ax, 720h	; display ' ' with black background
+	mov di, 0h	    ; colomn on a line
+
+init_screen:	
+	push cx
+	mov cx, 50h	    ; 80 byte each line
+
+    init_a_line:
+        mov es:[bx+di], ax
+        add di, 2
+        loop init_a_line
+	pop cx
+	loop init_screen
+
+	pop di
+	pop cx
+	pop bx
+	pop ax
+	ret
+
+
+
+; #############################################
+; sub func: compute_corp_data
+; parameter:
+;	cx	loop times
+;	ds:[si] :  index of src data
+;	ds:[di] :  index of des for write 
+compute_corp_data:
+	push ax
+	push bx
+	push cx
+	push dx
+	push si
+	push di
+
+	mov bx, 0	; src index for member
+each_year:
+	mov ax, ds:[si+0]	; centery of year
+	mov ds:[di+0], ax
+	mov ax, ds:[si+2]
+	mov ds:[di+2], ax
+
+	mov ax, ds:[si+60h]	; income lower
+	mov ds:[di+5], ax
+	mov dx, ds:[si+62h]	; income higher
+	mov ds:[di+7], dx	; now DX:AX are income for div
+	push cx
+	mov cx, ds:[bx+0c0h]  ; member -> cx, also for div
+	mov ds:[di+10], cx
+	call div_dw         ; return DX:AX quo, cx rem
+	mov ds:[di+13], ax	; save quo in ax, ignore DX
+	
+	add si, 4	; for year and income
+	add bx, 2	; for member
+	add di, 10h	; for next des line
+	pop cx
+	loop each_year
+
+	pop di
+	pop si
+	pop dx
+	pop cx
+	pop bx
+	pop ax
+	ret
+
+
+
+; #############################################
+; sub func: show_corp_data
+; to show corp data
+; parameters:
+;   DH for start line on screen(0-24)
+;   CX for lines, 
+;   DS:SI for offset of data
+;   ES:   for video segment
+show_corp_data:
+	push ax
+	push bx	
+	push cx
+	push dx
+	push si
+	push di
+
+	mov di, si		; di for offset of table data, 
+	mov si, 0f0h	; si for d2char as transit point
+    mov bl, dh      ; bl for row
+
+show_each_year:
+; call show_str, parameter:
+;   DS:SI : tr_pointer,  CL : color, 
+;   DH	  : row(0-24)    DL : col(0-79)
+	push cx
+	mov cl, 4h	        ; color
+
+	mov ax, ds:[di+0h]	; year
+	mov ds:[si+0], ax
+	mov ax, ds:[di+2h]
+	mov ds:[si+2], ax
+    mov dh, bl          ; row
+	mov dl, 4h	        ; colomn to show
+	call show_str
+
+	mov ax, ds:[di+5h]	; income low
+	mov dx, ds:[di+7h]	; income high
+	call d2char		    ; DX:AX data to char in DS:SI
+	mov dh, bl	        ; row
+	mov dl, 10h	        ; colomn  to show
+	call show_str
+
+	mov ax, ds:[di+0ah]	; members
+	mov dx, 0
+	call d2char	
+	mov dh, bl	        ; row
+	mov dl, 1eh	        ; colomn  to show
+	call show_str
+
+	mov ax, ds:[di+0dh]	; avg of income
+	mov dx, 0
+	call d2char
+	mov dh, bl	        ; row
+	mov dl, 2ah	        ; colomn  to show
+	call show_str
+
+	add di, 10h	        ; for each year.
+	inc bx		        ; show lines on screen
+
+	pop cx
+	loop show_each_year
+
+	pop di
+	pop si
+	pop dx
+	pop cx
+	pop bx
+	pop ax
+	ret
 
 
 ; #############################################
@@ -110,9 +266,6 @@ chk_ax:
     mov cx, ax      ; ax is Quo low
     jcxz div_done   ; AX zero, done
     jmp div_lp
-    ;inc cx          ; except cx=1
-	;loop div_lp	    ; use inc cl, and loop
-				    ; NOT use jmp div_lp
 div_done:
 	mov cx, bx	    ; counter
 wr_mem:

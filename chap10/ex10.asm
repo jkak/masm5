@@ -111,9 +111,6 @@ chk_ax:
     mov cx, ax      ; ax is Quo low
     jcxz div_done   ; AX zero, done
     jmp div_lp
-    ;inc cx          ; except cx=1
-	;loop div_lp	    ; use inc cl, and loop
-				    ; NOT use jmp div_lp
 div_done:
 	mov cx, bx	    ; counter
 wr_mem:
