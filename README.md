@@ -70,4 +70,22 @@
 * ./chap9/note.md
 
 ### 第十章
+* ./chap10/check5.asm   检查点5
+* ./chap10/ex10.asm     实验10
+* ./chap10/design1.asm  课程设计1
+* ./chap10/note.md
+
+### 第十一章
+* ./chap11/ex11.asm     实验11
+
+### 第十二章
+* ./chap12/ex12.asm     实验12
+* ./chap12/note.md
+
+
+### 第十三章
+* ./chap13/int_7ch.asm     13.2之问题2
+* ./chap13/int_loop.asm    13.3用int 实现loop功能
+* ./chap13/int_jmp.asm     检测点13.1 第2点 用int实现jmp功能
+* ./chap13/note.md
 
