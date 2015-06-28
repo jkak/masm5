@@ -1,5 +1,6 @@
 ; 13.3 use int to simulate loop 
 ; and show 80 '!' on a line
+; this asm is part of ex13 (-2)
 
 assume cs:code_seg
 
