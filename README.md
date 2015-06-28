@@ -87,5 +87,14 @@
 * ./chap13/int_7ch.asm     13.2之问题2
 * ./chap13/int_loop.asm    13.3用int 实现loop功能
 * ./chap13/int_jmp.asm     检测点13.1 第2点 用int实现jmp功能
+* ./chap13/ex13_1.asm     实验13.1
+* ./chap13/ex13_2.asm     实验13.2, 软链到int_loop.asm
 * ./chap13/note.md
+
+
+### 第十四章
+* ./chap14/cmos.asm      实验14，实现1
+* ./chap14/cmos2.asm     实验14，实现2
+* ./chap14/note.md
+
 
