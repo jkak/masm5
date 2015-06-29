@@ -110,3 +110,20 @@
 
 
 
+### 第十六章
+* ./chap16/show_hex.asm   16.3
+* ./chap16/ex16_ins.asm   实现16 中断安装程序
+* ./chap16/ex16_run.asm   实现16 中断测试程序
+* ./chap16/readme.md
+
+
+
+### 第十七章
+* ./chap17/rgb_7ch.asm    17.2
+* ./chap17/in_str.asm     17.3
+* ./chap17/read_mbr.asm   17.4
+* ./chap17/ex17.asm       实验17
+* ./chap17/readme.md
+
+
+
