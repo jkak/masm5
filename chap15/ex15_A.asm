@@ -1,6 +1,5 @@
-; 15.5 
-; F1 to change color 
-
+; ex 15
+; when relax A, the screen full with A
 assume cs:code, ss:stack
 
 stack segment
@@ -50,17 +49,17 @@ int9_routine:
 	pushf
 	call dword ptr cs:[200h]    ; origin int9 routine
 
-	cmp al, 3bh	    ; 3bh is scan code for F1
+	cmp al, 9eh	    ; 1eh is scan code for 'a'
+                    ; 1eh + 80h for relax 'A'
 	jne int9_ret
-
-	mov ax, 0b800h  ; change color
+	mov ax, 0b800h  ; show a full with screen
 	mov es, ax
-	mov bx, 1
+	mov bx, 0
 	mov cx, 2000
-change_color:
-	inc byte ptr es:[bx]
+show_a:
+	mov byte ptr es:[bx], 'A'
 	add bx, 2
-	loop change_color
+	loop show_a
 
 int9_ret:
 	pop es
