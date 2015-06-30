@@ -1,0 +1,32 @@
+###################################################
+#
+# Configuration file for Bochs 
+# with NEW Style
+# 2015.06.09
+#
+###################################################
+
+# how much memory the emulated machine will have
+megs: 32
+
+# filename of ROM images
+romimage:    file=$BXSHARE/BIOS-bochs-latest
+vgaromimage: file=$BXSHARE/VGABIOS-lgpl-latest
+
+# what disk images will be used
+floppya: 1_44=a.img, status=inserted
+
+# choose the boot disk.
+boot: floppy
+
+# where do we send log messages?
+log: /tmp/log.txt
+
+# disable the mouse
+mouse: enabled=0
+
+# enable key mapping, using US layout as default.
+keyboard: type=mf, serial_delay=200, paste_delay=100000
+keyboard: keymap=$BXSHARE/keymaps/x11-pc-us.map
+keyboard: user_shortcut=ctrl-alt-del
+
