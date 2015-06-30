@@ -48,7 +48,7 @@
 
 如前面补充说明。本次也需要将ex17.asm的代码编译成ex17.exe后，通过UltraISO保存到iso文件，做为CD的映像文件。另使用安装dos的dos71_1.img源文件，做为软驱的img文件。
 
-如此即可以在dos下通过c:\dos71\debug.exe d:\ex17.exe进行debug。本次比对了ex17.exe读取到的数据，与在linux下使用 hexdump dos71_1.img读到的数据做对比，除了显示时的大小端问题（同样是MBR结束的1feh字地址是0x55AAh，Linux显示AA55,dos系统显示顺序为55AA）。其他内容完全一样。
+如此即可以在dos下通过c:\dos71\debug.exe d:\ex17.exe进行debug。本次比对了ex17.exe读取到的数据，与在linux下使用 hexdump dos71_1.img读到的数据做对比，除了显示时的大小端问题（同样是MBR结束的1feh字地址是0xAA55h，Linux显示AA55，高字节地址在前，dos系统显示顺序为55AA，低字节地址在前）。其他内容完全一样。
 
 完毕。
 
