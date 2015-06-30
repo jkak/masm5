@@ -6,7 +6,7 @@
 #########################################################################
 #!/bin/bash
 
-nasm -f bin design_os.asm -o boot.bin
+nasm -f bin ./os/os.asm  -o boot.bin
 echo ""
 
 dd if=boot.bin of=a.img bs=512 count=1 conv=notrunc

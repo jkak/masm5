@@ -3,3 +3,6 @@
 *.OBJ
 *.EXE
 
+# bochs
+*.bin
+*.img
