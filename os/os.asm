@@ -17,61 +17,21 @@ start:
     mov	ds, ax
     mov	es, ax
 
-    mov si, boot_msg
-    call show_init_str  ; ds:si
-
-    call delay
-
-    ; show select
-    call show_select_item
+    jmp near main_entrance
 
 
-
-fin:
-    hlt
-    jmp	fin 		; loop forever
-
-
-
-
-
-;##################################
-; func: show_init_str
-;   string begin at ds:si, end with NULL
-
-show_init_str:
-    push ax
-    push bx
-    push si
-
-    mov	ah, 0eh		; show a char
-    mov	bx, 04h		; bh=0 : page no, bl=04h : red color.
-show_init_lp:
-	mov	al, [si]
-    cmp al, 0
-    je show_init_ret
-	int	10h			; show string
-    inc si
-    jmp show_init_lp
-
-show_init_ret:
-    pop si
-    pop bx
-    pop ax
-    ret
-;#### func end ####
 
 
 
 ;##################################
 ; func: sectors2mem.  
-;   copy floppy sectors to mem 8200h
+;   copy floppy sectors to mem 7e00h
 ; parameter:
 ;   ah : sub func no, 0 for read, 1 for write.
 ;   dx : logic sector
 ;   es:bx : memory segment and offset.
 sectors2mem:
-    mov ax, 820h
+    mov ax, 7e0h
     mov es, ax
     mov bx, 0       ; es:bx mem addr for copy floppy sector
     mov ah, 0       ; read sector
@@ -91,13 +51,9 @@ sectors_end:
 
 
 
-
-
-
-
 ; #############################################
 ; func: sec2mem
-;   copy a floppy sector to mem 8200h
+;   copy a floppy sector to mem 7e00h
 ; parameter:
 ;   ah : sub func no, 0 for read, 1 for write.
 ;   al : driver id. 0 for floppy, 80 for C:
@@ -159,12 +115,113 @@ ah_ret:
 
 
 
+
+    times 510-($-$$) db 0   ; fill with 0 to 01fdh(510) byte
+    dw 	0xaa55				; end flag of MBR
+
+
+; Sector 1 (CHS=001) end
+;##############################################
+
+
+
+
+;##############################################
+; Sector 2 (CHS=002) start
+
+
+
+;###################################
+; func: main_entrance.  do all thing here
+
+main_entrance:
+    mov si, boot_msg
+;    call show_init_str  ; ds:si
+
+;    call delay
+
+    ; clear screen
+    mov cx, 0           ; from row:col = 0:0
+    mov dx, 184fh       ;   to row:col = 24:79
+    call int10h_clear_screen
+
+    ; show select
+    mov ax, 105h        ; select 1, 5 lines 
+    call show_select_item
+
+    ; input select
+    ; call input_select
+
+
+fin:
+    hlt
+    jmp	fin 		; loop forever
+
+
+
+;#### func end ####
+
+
+
+;###################################
+; define data:
+
+select_msg:
+    ;tbl  dw 0, line_4, line_3, line_2, line_1, line_0
+    
+    db "Select item to run: (Up|Down)  ", 0
+    db "    * reset pc system          ", 0
+    db "    * start existed system     ", 0
+    db "    * show clock               ", 0
+    db "    * set  clock               ", 0
+;   db "-------|+++++++|-------|+++++++|"
+
+
+boot_msg:
+    db 0ah, "Hello, OS world!", 0
+
+
+
+
+
+
+
+
+
+;##################################
+; func: show_init_str
+;   string begin at ds:si, end with NULL
+
+show_init_str:
+    push ax
+    push bx
+    push si
+
+    mov	ah, 0eh		; show a char
+    mov	bx, 04h		; bh=0 : page no, bl=04h : red color.
+show_init_lp:
+	mov	al, [si]
+    cmp al, 0
+    je show_init_ret
+	int	10h			; show string
+    inc si
+    jmp show_init_lp
+
+show_init_ret:
+    pop si
+    pop bx
+    pop ax
+    ret
+;#### func end ####
+
+
+
 ;###################################
 ; func: delay . wait some seconds.
 delay:
     push ax
     push dx
-    mov dx, 0fh
+    mov dx, 10fh
     mov ax, 0ffffh
 delay_s1: 
     sub ax, 1
@@ -181,35 +238,32 @@ delay_s1:
 
 
 
-;###################################
-; func: show_select_item. to show select item
-
-show_select_item:
-    call int10h_clear_screen
-    nop
-    mov cx, 5h      ; 5 lines
-    call show_selector
-    nop
-
-
-    ret
-
-
-
-
-;#### func end ####
-
-
-
 
 ;###################################
 ; func: int10h_clear_screen to clear screen.
+; parameter:
+;   cx left-top row:col
+;   dx right-bottle row:col
+
 int10h_clear_screen:
+    push ax
+    push bx
+    push cx
+    push dx
+
     mov ah, 6       ; init to clear screen
     mov al, 0       ; blank
-    mov cx, 0       ; left-top row:col
-    mov dx, 184fh   ; right-bottle row:col
     int 10h
+
+    mov ah, 2       ; set cursor
+    mov bh, 0
+    mov dx, cx
+    int 10h
+
+    pop dx
+    pop cx
+    pop bx
+    pop ax
     ret
 
 ;#### func end ####
@@ -218,54 +272,91 @@ int10h_clear_screen:
 
 
 ;###################################
-; func: show_selector
-;   show msg defined at select_msg.
-; paramter: 
-;   cx is num of lines
+; func: get_str_len
+; ds:si is the addr, end of NULL
+; return cx is the length
 
-show_selector:
+get_str_len:
+    push ax
+    push si
+    mov cx, 0       ; for counter
+get_str_len_lp:
+    mov al, [si]
+    cmp al, 0
+    je show_len_end
+    inc cx
+    inc si
+    jmp short get_str_len_lp
+show_len_end:
+    pop si
+    pop ax
+    ret
+;#### func end ####
+
+
+
+;###################################
+; func: 
+
+;#### func end ####
+
+
+
+;###################################
+; func: show_select_item
+;   show msg defined at select_msg. start at row 0.
+; paramter: 
+;   ah is selected line.
+;   al is num of lines
+
+show_select_item:
     push ax
     push bx
     push cx
     push dx
     push bp
     push si
-    push di
+    push di         ; for backup
+    mov di,ax       ; backup ax
+    
+    ; clear item lines
+    mov cx, 0       ; start line
+    mov dh, al      ; lines
+    dec dh          ; end line
+    mov dl, 4fh
+    call int10h_clear_screen
 
-    mov di, select_tbl  ; table addr
-    mov dh, 1h          ; first row at: 1
-    mov dl, 8h          ; first col at: 8
-    mov bh, 0           ; page 0
+    mov si, select_msg  ; select msg addr
+    mov dh, 0h          ; first row at: 0
+    mov dl, 10h         ; first col at: 10h
 
+    mov cx, di
+    mov ch, 0           ; cx is lines
+    mov bx, 0           ; offset for line msg
 show_select_each_line:
-; note:
-;                 cx   1      2       3       4       5
-;               addr   2      4       6       8       10
-;select_tbl dw 0, line_4, line_3, line_2, line_1, line_0
-    mov bx, cx
-    add bx, bx          ; gen offset of table
-    mov bp, [di+bx]     ; each line base addr
-    mov si, bp
+    push bx             ; line offset
+    push cx             ; lines
 
-    push cx
-    mov cx, 0           ; string length counter
-show_len:
-    mov al, [si]
-    cmp al, 0
-    je show_len_end
-    inc cl
-    inc si
-    jmp short show_len
-show_len_end:
-    mov ax, 1301h   ; 13h for show string
+    mov bp, si          ; each line base addr for int 10h
+    call get_str_len    ; length in cx
+
+    mov ax, 1301h   ; ah:13h for show string
+    mov bh, 0       ; page 0
+    
+    ; check selected line no
+
     mov bl, 04h     ; attr. green color
+
     int	10h			; show string
 
-    inc dh          ; show at next line
     pop cx
+    pop bx
+
+    inc dh          ; next row to show
+    add si, 20h     ; next line offset
     loop show_select_each_line
 
-show_selector_ret:
+show_select_ret:
     pop di
     pop si
     pop bp
@@ -278,28 +369,28 @@ show_selector_ret:
 ;#### func end ####
 
 
-; define data:
 
-    select_tbl  dw 0, line_4, line_3, line_2, line_1, line_0
-    
-    line_0 db "Select which item to run: ",0
-    line_1 db "    1) reset pc", 0
-    line_2 db "    2) start existed system", 0
-    line_3 db "    3) show clock", 0
-    line_4 db "    4) set  clock", 0
+;###################################
+; func: input_select
+input_select:
 
 
-boot_msg:
-    db 0ah, "Hello, OS world!", 0
-
-    times 510-($-$$) db 0   ; fill with 0 to 01fdh(510) byte
-    dw 	0xaa55				; end flag of MBR
-
-    
+;#### func end ####
 
 
-; Sector 1 (CHS=001) end
-;##############################################
+
+
+
+;###################################
+; func: 
+
+;#### func end ####
+
+
+
+
+
+
 
 
 

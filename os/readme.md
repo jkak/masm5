@@ -17,13 +17,26 @@
 ## 程序调用关系
 下面主要列出从start开始的主程序，其内部的调用关系，主程序不会自动退出。目前完成任务后一直在hlt循环中。
 
+入口程序。位于逻辑0号扇区。
+
+* start
 > * call sectors2mem  # 读取多个连续的逻辑扇区到内存
      + call sec2mem   # 读取1个逻辑扇区到0x8200地址
-> * call show_init_str # 显示hello字符串。
-> * call delay         # 延迟一会儿
-> * call show_select_item           # 显示可选项
-     + call int10h_clear_screen     # clear screen
-     + call show_selector           # show selector items
+> * jmp main_entrance
+
+
+主程序。开始于逻辑1号扇区。
+
+* main_entrance
+> * call show_init_str # show hello string
+> * call delay         #
+> * call show_select_item        # show selectable item
+> * call int10h_clear_screen     # clear screen
+> * call show_selector           # show selector items
+> * input_select     
+     
+
+
 
 
 
