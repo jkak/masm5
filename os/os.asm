@@ -2,6 +2,7 @@
 ; author : jungle85gopy
 ; date   : 2015.06.30
 
+
 ;##############################################
 ; Sector 1 (CHS=001)
 
@@ -18,6 +19,11 @@ start:
 
     mov si, boot_msg
     call show_init_str  ; ds:si
+
+    call delay
+
+    ; show select
+    call show_select_item
 
 
 
@@ -38,8 +44,8 @@ show_init_str:
     push bx
     push si
 
-	mov	ah, 0eh		
-	mov	bx, 04h		; bh=0 : page no, bl=04h : red color.
+    mov	ah, 0eh		; show a char
+    mov	bx, 04h		; bh=0 : page no, bl=04h : red color.
 show_init_lp:
 	mov	al, [si]
     cmp al, 0
@@ -152,11 +158,144 @@ ah_ret:
 ;#### func end ####
 
 
+
+;###################################
+; func: delay . wait some seconds.
+delay:
+    push ax
+    push dx
+    mov dx, 0fh
+    mov ax, 0ffffh
+delay_s1: 
+    sub ax, 1
+    sbb dx, 0
+    
+    cmp ax, 0
+    jne delay_s1
+    cmp dx, 0
+    jne delay_s1
+    pop dx
+    pop ax
+    ret
+;#### func end ####
+
+
+
+;###################################
+; func: show_select_item. to show select item
+
+show_select_item:
+    call int10h_clear_screen
+    nop
+    mov cx, 5h      ; 5 lines
+    call show_selector
+    nop
+
+
+    ret
+
+
+
+
+;#### func end ####
+
+
+
+
+;###################################
+; func: int10h_clear_screen to clear screen.
+int10h_clear_screen:
+    mov ah, 6       ; init to clear screen
+    mov al, 0       ; blank
+    mov cx, 0       ; left-top row:col
+    mov dx, 184fh   ; right-bottle row:col
+    int 10h
+    ret
+
+;#### func end ####
+
+
+
+
+;###################################
+; func: show_selector
+;   show msg defined at select_msg.
+; paramter: 
+;   cx is num of lines
+
+show_selector:
+    push ax
+    push bx
+    push cx
+    push dx
+    push bp
+    push si
+    push di
+
+    mov di, select_tbl  ; table addr
+    mov dh, 1h          ; first row at: 1
+    mov dl, 8h          ; first col at: 8
+    mov bh, 0           ; page 0
+
+show_select_each_line:
+; note:
+;                 cx   1      2       3       4       5
+;               addr   2      4       6       8       10
+;select_tbl dw 0, line_4, line_3, line_2, line_1, line_0
+    mov bx, cx
+    add bx, bx          ; gen offset of table
+    mov bp, [di+bx]     ; each line base addr
+    mov si, bp
+
+    push cx
+    mov cx, 0           ; string length counter
+show_len:
+    mov al, [si]
+    cmp al, 0
+    je show_len_end
+    inc cl
+    inc si
+    jmp short show_len
+show_len_end:
+    mov ax, 1301h   ; 13h for show string
+    mov bl, 04h     ; attr. green color
+    int	10h			; show string
+
+    inc dh          ; show at next line
+    pop cx
+    loop show_select_each_line
+
+show_selector_ret:
+    pop di
+    pop si
+    pop bp
+    pop dx
+    pop cx
+    pop bx
+    pop ax
+    ret
+
+;#### func end ####
+
+
+; define data:
+
+    select_tbl  dw 0, line_4, line_3, line_2, line_1, line_0
+    
+    line_0 db "Select which item to run: ",0
+    line_1 db "    1) reset pc", 0
+    line_2 db "    2) start existed system", 0
+    line_3 db "    3) show clock", 0
+    line_4 db "    4) set  clock", 0
+
+
 boot_msg:
     db 0ah, "Hello, OS world!", 0
 
     times 510-($-$$) db 0   ; fill with 0 to 01fdh(510) byte
     dw 	0xaa55				; end flag of MBR
+
+    
 
 
 ; Sector 1 (CHS=001) end

@@ -1,6 +1,13 @@
 
 #　课程设计2　
 
+## 运行环境
+本项目中，之前的代码，除ex17.asm外，都是在dosbox模拟环境下运行测试的。本次课程设计，和之前不同。之前的代码都只是dos下的一个程序而已，而本次设计的代码，是一个简单的操作系统。编写风格及测试环境都有所不同。
+
+本来是可以在VMWare等虚拟机下测试的，但需要来回中转文件。因此本次直接在Linux下使用bochs软件来完成测试。基本的方法就是run_bochs.sh脚本里的三行代码。此时暂时省略环境搭建部分。bochs比较方面之处，是在于其就是个linux下的软件。而dosbox则是模拟dos，界面的记录不能回滚查看。而bochs则有滚动条，只是刚开始要熟悉一下其不同的debug风格。
+
+## 完成过程记录
+
 本文档主要记录完成课程设计２的过程。
 1 增加sectors2mem程序，用于从软盘读取多个扇区数据到内存。在程序末端，定义了3个扇区的头内容和尾内容，用于测试观察。6.30.
 
@@ -13,5 +20,10 @@
 > * call sectors2mem  # 读取多个连续的逻辑扇区到内存
      + call sec2mem   # 读取1个逻辑扇区到0x8200地址
 > * call show_init_str # 显示hello字符串。
+> * call delay         # 延迟一会儿
+> * call show_select_item           # 显示可选项
+     + call int10h_clear_screen     # clear screen
+     + call show_selector           # show selector items
+
 
 
