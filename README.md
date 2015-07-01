@@ -67,7 +67,7 @@
 | ./chap13/int_7ch.asm   | study int 7ch             |   13.2之问题2   |
 | ./chap13/int_loop.asm  | int, stack and loop       |   13.3   |
 | ./chap13/int_jmp.asm   | int, stack and jmp        | 检测点13.1 -2   |
-| ./chap13/ex13_1.asm    | int7ch show stri          |   实验13.1   |
+| ./chap13/ex13_1.asm    | int7ch show str           |   实验13.1   |
 | ./chap13/ex13_2.asm    | ln -s to int_loop.asm     |   实验13.2,     |
 | ./chap14/cmos.asm      | read cmos date/time       |   实验14，实现1   |
 | ./chap14/cmos2.asm     | style 2                   |   实验14，实现2   |
