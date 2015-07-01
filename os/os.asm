@@ -255,7 +255,7 @@ int10h_clear_screen:
     mov al, 0       ; blank
     int 10h
 
-    mov ah, 2       ; set cursor
+    mov ah, 2       ; set cursor to 0:0
     mov bh, 0
     mov dx, cx
     int 10h
@@ -337,23 +337,31 @@ show_select_each_line:
     push bx             ; line offset
     push cx             ; lines
 
+    ; check selected line no
+    mov ax, di          ; ah is selected line
+    mov al, 5h
+    sub al, cl          ; al is diff of 5-cx
+    cmp ah, al
+    je line_equ
+    mov bl, 07h         ; black color
+    jmp line_cmp_end
+line_equ:
+    mov bl, 24h         ; red color, green background.
+    call set_cursor
+line_cmp_end:
+    mov di, ax          ; backup again 
     mov bp, si          ; each line base addr for int 10h
     call get_str_len    ; length in cx
 
-    mov ax, 1301h   ; ah:13h for show string
-    mov bh, 0       ; page 0
-    
-    ; check selected line no
-
-    mov bl, 04h     ; attr. green color
-
-    int	10h			; show string
+    mov ax, 1300h       ; ah:13h for show string
+    mov bh, 0           ; page 0
+    int	10h		        ; show string
 
     pop cx
     pop bx
 
-    inc dh          ; next row to show
-    add si, 20h     ; next line offset
+    inc dh              ; next row to show
+    add si, 20h         ; next line offset
     loop show_select_each_line
 
 show_select_ret:
@@ -369,6 +377,35 @@ show_select_ret:
 ;#### func end ####
 
 
+
+;###################################
+; func: set_cursor
+; parameter: al selected line
+
+set_cursor:
+    push ax
+    push bx
+    push dx
+
+    mov dh, al
+    mov dl, 2fh     ; str begin 10h, len 20h
+    mov ah, 2       ; set cursor
+    mov bh, 0       ; page 0
+    int 10h
+
+    pop dx
+    pop bx
+    pop ax
+    ret
+
+;#### func end ####
+
+
+
+;###################################
+; func: input_select
+
+;#### func end ####
 
 ;###################################
 ; func: input_select
