@@ -147,10 +147,12 @@ main_entrance:
 
     ; show select
     mov ax, 105h        ; select 1, 5 lines 
+main_select_lp:
     call show_select_item
 
     ; input select
-    ; call input_select
+    call input_select
+    jmp main_select_lp
 
 
 fin:
@@ -409,8 +411,51 @@ set_cursor:
 
 ;###################################
 ; func: input_select
-input_select:
+; parameter: ax. ah: selected line. al: lines
+;   eg: 105, total 5 lines. selected scope is 1-4
 
+input_select:
+    push bx
+    push cx
+    mov bx, ax
+    mov cl, al      ; lines
+    dec cl          ; bottle line. select scope
+
+input_lp:
+    mov ah, 0
+    int 16h         ; scan code in ah, ascii in al
+    
+    cmp ah, 48h     ; Up   key
+    je in_up
+    cmp ah, 50h     ; Down key
+    je in_down
+    jmp input_lp
+	
+in_up:
+    mov ax, bx
+    cmp ah, 1       ; top already, roll to bottle
+    je in_up_roll
+    dec ah
+    jmp in_ret
+in_up_roll:
+    mov ax, bx
+    mov ah, cl      ; roll selected line to bottle
+    jmp in_ret
+    
+in_down:
+    mov ax, bx
+    cmp ah, cl      ; bottle already, roll to top
+    je in_down_roll
+    inc ah
+    jmp in_ret
+in_down_roll:
+    mov ax, bx      ; reovery al: lines
+    mov ah, 1       ; roll selected line to bottle
+    jmp in_ret
+in_ret:
+    pop cx
+    pop bx
+    ret
 
 ;#### func end ####
 
