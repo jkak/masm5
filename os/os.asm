@@ -151,7 +151,21 @@ main_select_lp:
     call show_select_item
 
     ; input select
+    mov dx, 0h          ; when enter, dx= selected line
     call input_select
+    cmp dx, 1
+    je main_do_item_1
+    nop
+
+    jmp main_select_lp
+
+main_do_item_1:
+    nop
+    call restart_sys
+    call delay
+    jmp main_select_lp
+
+main_select_again:
     jmp main_select_lp
 
 
@@ -223,7 +237,7 @@ show_init_ret:
 delay:
     push ax
     push dx
-    mov dx, 10fh
+    mov dx, 3fh
     mov ax, 0ffffh
 delay_s1: 
     sub ax, 1
@@ -404,19 +418,21 @@ set_cursor:
 
 
 
-;###################################
-; func: input_select
-
-;#### func end ####
 
 ;###################################
 ; func: input_select
-; parameter: ax. ah: selected line. al: lines
-;   eg: 105, total 5 lines. selected scope is 1-4
+; parameter: 
+;   ax. ah: selected line. al: lines
+;       eg: 105, total 5 lines. selected scope is 1-4
+; ret: ax:
+;       ah: the new selectd line. 
+;       al: never changed here
+;       dx: =1, when enter
 
 input_select:
     push bx
     push cx
+    mov dx, 0
     mov bx, ax
     mov cl, al      ; lines
     dec cl          ; bottle line. select scope
@@ -425,10 +441,14 @@ input_lp:
     mov ah, 0
     int 16h         ; scan code in ah, ascii in al
     
+    cmp ah, 1ch     ; ENTER
+    je in_enter
+
     cmp ah, 48h     ; Up   key
     je in_up
     cmp ah, 50h     ; Down key
     je in_down
+
     jmp input_lp
 	
 in_up:
@@ -438,7 +458,7 @@ in_up:
     dec ah
     jmp in_ret
 in_up_roll:
-    mov ax, bx
+    mov ax, bx      ; reovery al: lines
     mov ah, cl      ; roll selected line to bottle
     jmp in_ret
     
@@ -452,6 +472,10 @@ in_down_roll:
     mov ax, bx      ; reovery al: lines
     mov ah, 1       ; roll selected line to bottle
     jmp in_ret
+
+in_enter:
+    mov ax, bx      ; reovery ax
+    mov dl, bh      ; bh is the selected item line for enter
 in_ret:
     pop cx
     pop bx
@@ -459,6 +483,23 @@ in_ret:
 
 ;#### func end ####
 
+
+
+
+;###################################
+; func: restart_sys
+
+restart_sys:
+    push si
+    mov si, boot_msg
+    call show_init_str  ; ds:si
+;    push bp
+ ;   mov sp, bp
+  ;  mov 
+    pop si
+    ret
+
+;#### func end ####
 
 
 
