@@ -136,9 +136,9 @@ ah_ret:
 
 main_entrance:
     mov si, boot_msg
-;    call show_init_str  ; ds:si
+    call show_init_str  ; ds:si
 
-;    call delay
+    call delay
 
     ; clear screen
     mov cx, 0           ; from row:col = 0:0
@@ -487,17 +487,22 @@ in_ret:
 
 
 ;###################################
-; func: restart_sys
+; func: restart_sys to restart system 
 
 restart_sys:
     push si
     mov si, boot_msg
     call show_init_str  ; ds:si
-;    push bp
- ;   mov sp, bp
-  ;  mov 
+    call delay
+
+    push bp
+    mov bp, sp
+    mov word [bp+4], 0h      ; modify IP in stack
+    mov word [bp+6], 0ffffh  ; modify CS in stack
+    pop bp              
     pop si
-    ret
+    ; now, the top of stack is CS:IP, far return to restart
+    retf                
 
 ;#### func end ####
 
@@ -518,9 +523,9 @@ restart_sys:
 
 
 ; 200h sector1
-    db "12345678"
-    times 1022-($-$$) db 0   ; fill with 0 to logic sector 1
-    db "ok"
+;    db "12345678"
+;    times 1022-($-$$) db 0   ; fill with 0 to logic sector 1
+;    db "ok;"
 
 ; 400h sector2
     db "ABCDEFGH"
