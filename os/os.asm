@@ -12,8 +12,6 @@ start:
     call sectors2mem    ; copy floppy sectors to mem
 
     mov	ax, 0
-    mov ss, ax
-    mov sp, 7c00h
     mov	ds, ax
     mov	es, ax
 
@@ -31,9 +29,10 @@ start:
 ;   dx : logic sector
 ;   es:bx : memory segment and offset.
 sectors2mem:
-    mov ax, 7e0h
+    mov ax, 0h
     mov es, ax
-    mov bx, 0       ; es:bx mem addr for copy floppy sector
+    mov bx, 7e00h   ; es:bx mem addr for copy floppy sector
+
     mov ah, 0       ; read sector
     mov al, 0       ; read floppy
 
@@ -65,12 +64,13 @@ sec2mem:
     ja ah_ret
 
     push ax
+    push bx
     push cx
     push dx
-    push es
     push si
-    push bx
+    push di
     mov si, ax      ; backup ax 
+    mov di, bx      ; backup bx
 
     ; compute CHS, Formula:
     ; logicSector = (Header*80  + Cylinder) * 18 + Sector - 1
@@ -101,13 +101,14 @@ sec2mem:
     add ah, 2       ; ah: 2/3 means read/write for int13h
     mov al, 1h      ; ### al: operate only 1 Sector each time.
 
-    pop bx          ; es:bx for mem addr
+    mov bx, di      ; es:bx for mem addr
     int 13h         ; read/write a logic sector.
 
+    pop di
     pop si
-    pop es
     pop dx
     pop cx
+    pop bx
     pop ax
 ah_ret:
     ret
@@ -154,7 +155,10 @@ main_select_lp:
     mov dx, 0h          ; when enter, dx= selected line
     call input_select
     cmp dx, 1
-    je main_do_item_1
+    je main_do_item_1   ; restart current os
+    nop
+    cmp dx, 2
+    je main_do_item_2   ; restart from system on c:
     nop
 
     jmp main_select_lp
@@ -164,6 +168,13 @@ main_do_item_1:
     call restart_sys
     call delay
     jmp main_select_lp
+
+main_do_item_2:
+    nop
+    call restart_sys_c
+    call delay
+
+
 
 main_select_again:
     jmp main_select_lp
@@ -505,6 +516,34 @@ restart_sys:
     retf                
 
 ;#### func end ####
+
+
+
+
+;###################################
+; func: restart_sys_c to restart system on C:
+
+restart_sys_c:
+    mov ax, 0h
+    mov es, ax
+    mov bx, 7c00h   ; es:bx mem addr for copy C: MBR sector
+    mov ah, 0       ; read sector
+    mov al, 80h     ; read disk C
+    mov dx, 0       ; start from logic sector 1.(0 is mbr)
+    call sec2mem    ; copy MBR sector to mem
+
+reset_cs_ip:
+    push bp
+    mov bp, sp
+    mov word [bp+2], 7c00h  ; modify IP in stack
+    mov word [bp+4], 0h     ; modify CS in stack
+    pop bp              
+    ; now, the top of stack is CS:IP, far return to restart
+    retf                
+
+;#### func end ####
+
+
 
 
 
