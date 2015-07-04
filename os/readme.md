@@ -69,6 +69,7 @@ echo ""
 
 
 * start
+
 > * call sectors2mem  # 读取多个连续的逻辑扇区到内存
      + call sec2mem   # 读取1个逻辑扇区到0x8200地址
 > * jmp main_entrance
@@ -77,6 +78,7 @@ echo ""
 主程序。开始于逻辑1号扇区。
 
 * main_entrance
+
 > * call show_init_str 
 > * call delay
 > * call show_select_item        

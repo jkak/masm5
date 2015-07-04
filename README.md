@@ -39,48 +39,48 @@
 ## 代码与章节对应关系
 新版本，使用版本。并注意基本功能。
 
-|        file name       |    functions         |   chapter |
-| ---- ----------------  | --------------       | :------   |
-| ./chap4/ex3.asm        | NULL                 |   实验3   |
-| ./chap5/6loop.asm      | loop功能             |   程序5.5, 5.6   |
-| ./chap5/ex4_1.asm      | loop传数据           |   实验4.1   |
-| ./chap5/ex4_2.asm      | loop传数据           |   实验4.2   |
-| ./chap5/ex4_3.asm      | loop传数据           |   实验4.3   |
-| ./chap6/ex5_1.asm      | debug segment        |   实验5.1   |
-| ./chap6/ex5_2.asm      | debug segment        |   实验5.2   |
-| ./chap6/ex5_3.asm      | debug segment        |   实验5.3   |
-| ./chap6/ex5_5.asm      | add segment          |   实验5.5   |
-| ./chap7/7ques6.asm     | [bx+idata] addessing      | 问题6   |
-| ./chap7/7ques7.asm     | [bx+si] addessing         | 问题7   |
-| ./chap7/ex6.asm        | [bx+si+idata] addessing   | 实验6   |
-| ./chap8/6dec.asm       | compute data              | 程序6 dec corp  |
-| ./chap8/ex7.asm        | compute and show data     | 实验7 dec corp  |
-| ./chap9/check1.asm     | study jmp                 |   检查点9.1   |
-| ./chap9/check2.asm     | study jmp                 |   检查点9.2   |
-| ./chap9/ex8.asm        | analyse jmp short         |   实验8   |
-| ./chap9/ex9.asm        | show string on screen     |   实验9   |
-| ./chap10/check5.asm    | call and ret              |   检查点5   |
-| ./chap10/ex10.asm      | show_str, div_dw, d2char  |   实验10   |
-| ./chap10/design1.asm   | show ex7                  |   课程设计1   |
-| ./chap11/ex11.asm      | capital letter and show   |   实验11   |
-| ./chap12/ex12.asm      | int 0h show str           |   实验12   |
-| ./chap13/int_7ch.asm   | study int 7ch             |   13.2之问题2   |
-| ./chap13/int_loop.asm  | int, stack and loop       |   13.3   |
-| ./chap13/int_jmp.asm   | int, stack and jmp        | 检测点13.1 -2   |
-| ./chap13/ex13_1.asm    | int7ch show str           |   实验13.1   |
-| ./chap13/ex13_2.asm    | ln -s to int_loop.asm     |   实验13.2,     |
-| ./chap14/cmos.asm      | read cmos date/time       |   实验14，实现1   |
-| ./chap14/cmos2.asm     | style 2                   |   实验14，实现2   |
-| ./chap15/a2z_esc.asm   | ESC change char color     |   15.4   |
-| ./chap15/front_F1.asm  | F1 screen color           |   15.5   |
-| ./chap15/ex15_A.asm    | full A on screen          |   实验15   |
-| ./chap16/show_hex.asm  | addressing table show hex    |   16.3   |
-| ./chap16/ex16_ins.asm  | screen func:                 | 实验16 install  |
-| ./chap16/ex16_run.asm  | clear/setcolor/set/back/roll |  实现16 test |
-| ./chap17/rgb_7ch.asm   | input rgb change color    |   17.2   |
-| ./chap17/in_str.asm    | input string              |   17.3   |
-| ./chap17/read_mbr.asm  | read mbr sector           |   17.4   |
-| ./chap17/ex17.asm      | read logic sector         |   实验17 |
+|        file name       |    functions                 |   chapter         |
+| :-------------------   | :-------------               | :------           |
+| ./chap4/ex3.asm        | NULL                         |  实验3            |
+| ./chap5/6loop.asm      | loop功能                     |  程序5.5, 5.6     |
+| ./chap5/ex4_1.asm      | loop传数据                   |  实验4.1          |
+| ./chap5/ex4_2.asm      | loop传数据                   |  实验4.2          |
+| ./chap5/ex4_3.asm      | loop传数据                   |  实验4.3          |
+| ./chap6/ex5_1.asm      | debug segment                |  实验5.1          |
+| ./chap6/ex5_2.asm      | debug segment                |  实验5.2          |
+| ./chap6/ex5_3.asm      | debug segment                |  实验5.3          |
+| ./chap6/ex5_5.asm      | add segment                  |  实验5.5          |
+| ./chap7/7ques6.asm     | [bx+idata] addessing         |  问题6            |
+| ./chap7/7ques7.asm     | [bx+si] addessing            |  问题7            |
+| ./chap7/ex6.asm        | [bx+si+idata] addessing      |  实验6            |
+| ./chap8/6dec.asm       | compute data                 |  程序6 dec corp   |
+| ./chap8/ex7.asm        | compute and show data        |  实验7 dec corp   |
+| ./chap9/check1.asm     | study jmp                    |  检查点9.1        |
+| ./chap9/check2.asm     | study jmp                    |  检查点9.2        |
+| ./chap9/ex8.asm        | analyse jmp short            |  实验8            |
+| ./chap9/ex9.asm        | show string on screen        |  实验9            |
+| ./chap10/check5.asm    | call and ret                 |  检查点5          |
+| ./chap10/ex10.asm      | show_str, div_dw, d2char     |  实验10           |
+| ./chap10/design1.asm   | show ex7                     |  课程设计1        |
+| ./chap11/ex11.asm      | capital letter and show      |  实验11           |
+| ./chap12/ex12.asm      | int 0h show str              |  实验12           |
+| ./chap13/int_7ch.asm   | study int 7ch                |  13.2之问题2      |
+| ./chap13/int_loop.asm  | int, stack and loop          |  13.3             |
+| ./chap13/int_jmp.asm   | int, stack and jmp           |  检测点13.1 -2    |
+| ./chap13/ex13_1.asm    | int7ch show str              |  实验13.1         |
+| ./chap13/ex13_2.asm    | ln -s to int_loop.asm        |  实验13.2,        |
+| ./chap14/cmos.asm      | read cmos date/time          |  实验14，实现1    |
+| ./chap14/cmos2.asm     | style 2                      |  实验14，实现2    |
+| ./chap15/a2z_esc.asm   | ESC change char color        |  15.4             |
+| ./chap15/front_F1.asm  | F1 screen color              |  15.5             |
+| ./chap15/ex15_A.asm    | full A on screen             |  实验15           |
+| ./chap16/show_hex.asm  | addressing table show hex    |  16.3             |
+| ./chap16/ex16_ins.asm  | screen func:                 |  实验16 install   |
+| ./chap16/ex16_run.asm  | clear/setcolor/set/back/roll |  实现16 test      |
+| ./chap17/rgb_7ch.asm   | input rgb change color       |  17.2             |
+| ./chap17/in_str.asm    | input string                 |  17.3             |
+| ./chap17/read_mbr.asm  | read mbr sector              |  17.4             |
+| ./chap17/ex17.asm      | read logic sector            |  实验17           |
 
 
 
