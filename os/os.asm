@@ -185,33 +185,11 @@ main_do_item_2:
     call delayL
 
 main_do_item_3:
-    push ax
-    push cx
-    push dx
-
-    ; clear item lines
-    ; ah: selected line, al: lines.
-    ; dx: selected item,
-    mov cx, 0       ; start line
-    mov dh, al      ; lines
-    dec dh          ; end line
-    mov dl, 4fh
-    call int10h_clear_screen
-
-main_do_item_3_lp:
-    call show_clock
-    call delay
-    ;call input_select
-
-    jmp main_do_item_3_lp
-    
-    ; return to : main_select_lp
-    pop dx
-    pop cx
-    pop ax
+    call show_clock_ctrl
 
 
 main_select_again:
+    ; jmp for all select je 
     jmp main_select_lp
 
 
@@ -282,7 +260,7 @@ show_init_ret:
 ; func: delayL . wait some seconds longer.
 delayL:
     push cx
-    mov cx, 1fh
+    mov cx, 10h
 delay_lp:
     call delay
     loop delay_lp
@@ -480,6 +458,30 @@ set_cursor:
 
 
 
+;###################################
+; func: read_kb  to read keyboard input
+; return:
+;;;;;;;;;;;;;;   dx: 1 means read success, 0 mean no input
+;   ax: ah: scan code, al ascii. when dx=1
+read_kb:
+   ; mov dx, 0h          ; init dx
+    mov ah, 1           ; test input
+    int 16h             ; scan code in ah, ascii in al
+    je kb_in_ignore     ; ZF=1 means Zero, keyboard buf is blank
+    mov ah, 0           ; read input 
+    int 16h 
+    ;mov dx, 1h
+    jmp kb_in_ret
+
+kb_in_ignore:
+    mov ax, 0h
+kb_in_ret:
+    ret
+
+;#### func end ####
+
+
+
 
 
 
@@ -605,6 +607,45 @@ reset_cs_ip:
 
 
 
+
+;###################################
+; func: show_clock_ctrl  to control of show clock from cmos
+show_clock_ctrl:
+    push ax
+    push cx
+    push dx
+
+    ; clear item lines
+    ; ah: selected line, al: lines.     dx: selected item,
+    mov cx, 0       ; start line
+    mov dh, al      ; lines
+    dec dh          ; end line
+    mov dl, 4fh
+    call int10h_clear_screen
+
+clk_ctrl_lp:
+    call show_clock
+    call delay
+    push ax
+    call read_kb
+    ; 0: no input, other: input occur.
+    cmp ax, 0
+    je clk_read_no
+    cmp ah, 01h             ; scan code of ESC
+    je clk_ctrl_ret
+
+clk_read_no:
+    pop ax
+    jmp clk_ctrl_lp
+    
+clk_ctrl_ret:
+    pop ax
+    pop dx
+    pop cx
+    pop ax
+    ret
+
+;#### func end ####
 
 
 
