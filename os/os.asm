@@ -139,7 +139,7 @@ main_entrance:
     mov si, boot_msg
     call show_init_str  ; ds:si
 
-    call delay
+    call delayL
 
     ; clear screen
     mov cx, 0           ; from row:col = 0:0
@@ -154,6 +154,9 @@ main_select_lp:
     ; input select
     mov dx, 0h          ; when enter, dx= selected line
     call input_select
+    cmp dx, 0
+    je main_do_item_0   ; only delay
+    nop
     cmp dx, 1
     je main_do_item_1   ; restart current os
     nop
@@ -166,16 +169,20 @@ main_select_lp:
 
     jmp main_select_lp
 
+main_do_item_0:
+    nop
+    call delay
+    jmp main_select_lp
 main_do_item_1:
     nop
     call restart_sys
-    call delay
+    call delayL
     jmp main_select_lp
 
 main_do_item_2:
     nop
     call restart_sys_c
-    call delay
+    call delayL
 
 main_do_item_3:
     push ax
@@ -272,11 +279,26 @@ show_init_ret:
 
 
 ;###################################
+; func: delayL . wait some seconds longer.
+delayL:
+    push cx
+    mov cx, 1fh
+delay_lp:
+    call delay
+    loop delay_lp
+
+    pop cx
+    ret
+;#### func end ####
+
+
+
+;###################################
 ; func: delay . wait some seconds.
 delay:
     push ax
     push dx
-    mov dx, 8fh
+    mov dx, 08h
     mov ax, 0ffffh
 delay_s1: 
     sub ax, 1
@@ -458,6 +480,10 @@ set_cursor:
 
 
 
+
+
+
+
 ;###################################
 ; func: input_select
 ; parameter: 
@@ -532,7 +558,7 @@ restart_sys:
     push si
     mov si, boot_msg
     call show_init_str  ; ds:si
-    call delay
+    call delayL
 
     push bp
     mov bp, sp
@@ -552,6 +578,12 @@ restart_sys:
 ; func: restart_sys_c to restart system on C:
 
 restart_sys_c:
+    push si
+    mov si, boot_msg
+    call show_init_str  ; ds:si
+    call delayL
+    pop si
+
     mov ax, 0h
     mov es, ax
     mov bx, 7c00h   ; es:bx mem addr for copy C: MBR sector
