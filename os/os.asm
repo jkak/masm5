@@ -617,29 +617,36 @@ show_clock_ctrl:
 
     ; clear item lines
     ; ah: selected line, al: lines.     dx: selected item,
-    mov cx, 0       ; start line
-    mov dh, al      ; lines
-    dec dh          ; end line
+    mov cx, 0               ; start line
+    mov dh, al              ; lines
+    dec dh                  ; end line
     mov dl, 4fh
     call int10h_clear_screen
 
+    mov dh, 04h             ; set color
 clk_ctrl_lp:
     call show_clock
     call delay
-    push ax
     call read_kb
     ; 0: no input, other: input occur.
     cmp ax, 0
     je clk_read_no
     cmp ah, 01h             ; scan code of ESC
     je clk_ctrl_ret
+    cmp ah, 3bh             ; scan code of F1
+    je clk_read_f1
+    jmp clk_read_no
+
+clk_read_f1:
+    inc dh                  ; change color
+    cmp dh, 8h              
+    jne clk_read_no
+    mov dh, 1h              ; 111B -> 1000B, roll to 001B
 
 clk_read_no:
-    pop ax
     jmp clk_ctrl_lp
     
 clk_ctrl_ret:
-    pop ax
     pop dx
     pop cx
     pop ax
@@ -651,6 +658,9 @@ clk_ctrl_ret:
 
 ;###################################
 ; func: show_clock to show clock from cmos
+; parameter:
+;   dh: attr of color for clock
+
 show_clock:
     jmp clk_start
 
@@ -662,10 +672,10 @@ clk_start:
     push ax
     push bx
     push cx
-    push dx
     push si
     push di
     push es
+    push dx
 
     mov ax, cs
     mov ds, ax
@@ -680,7 +690,8 @@ clk_start:
     mov di, 0               ; write nidex of video
     mov bx, 160*2+30*2      ; row 2, col 30
     mov cx, 11h	            ; length of time
-    mov ah, 04h             ; color
+    pop dx                  ; reover color
+    mov ah, dh
 
 ; show date time
 clk_show_each:
@@ -693,7 +704,6 @@ clk_show_each:
     pop es
     pop di
     pop si
-    pop dx
     pop cx
     pop bx
     pop ax
