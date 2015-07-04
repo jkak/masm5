@@ -160,6 +160,9 @@ main_select_lp:
     cmp dx, 2
     je main_do_item_2   ; restart from system on c:
     nop
+    cmp dx, 3
+    je main_do_item_3   ; show clock 
+    nop
 
     jmp main_select_lp
 
@@ -174,6 +177,31 @@ main_do_item_2:
     call restart_sys_c
     call delay
 
+main_do_item_3:
+    push ax
+    push cx
+    push dx
+
+    ; clear item lines
+    ; ah: selected line, al: lines.
+    ; dx: selected item,
+    mov cx, 0       ; start line
+    mov dh, al      ; lines
+    dec dh          ; end line
+    mov dl, 4fh
+    call int10h_clear_screen
+
+main_do_item_3_lp:
+    call show_clock
+    call delay
+    ;call input_select
+
+    jmp main_do_item_3_lp
+    
+    ; return to : main_select_lp
+    pop dx
+    pop cx
+    pop ax
 
 
 main_select_again:
@@ -248,7 +276,7 @@ show_init_ret:
 delay:
     push ax
     push dx
-    mov dx, 3fh
+    mov dx, 8fh
     mov ax, 0ffffh
 delay_s1: 
     sub ax, 1
@@ -549,7 +577,96 @@ reset_cs_ip:
 
 
 ;###################################
-; func: 
+; func: show_clock to show clock from cmos
+show_clock:
+    jmp clk_start
+
+time_style  db 'yy/mm/dd hh:mm:ss$'
+time_table  db 9, 8, 7, 4, 2, 0
+;              y  m  d  h  m  second offset of date in cmos
+
+clk_start:
+    push ax
+    push bx
+    push cx
+    push dx
+    push si
+    push di
+    push es
+
+    mov ax, cs
+    mov ds, ax
+    mov di, time_style      ; write index
+    mov si, time_table      ; src nidex of cmos
+    mov cx, 6h
+    call clk_read_cmos
+    
+    mov ax, 0b800h
+    mov es, ax
+    mov si, time_style      ; read  index of time
+    mov di, 0               ; write nidex of video
+    mov bx, 160*2+30*2      ; row 2, col 30
+    mov cx, 11h	            ; length of time
+    mov ah, 04h             ; color
+
+; show date time
+clk_show_each:
+    mov al, [ds:si]         ; read from table_style
+    mov [es:di+bx], ax      ; write to  video
+    inc si      
+    add di, 2h 
+    loop clk_show_each
+
+    pop es
+    pop di
+    pop si
+    pop dx
+    pop cx
+    pop bx
+    pop ax
+    ret
+
+;#### func end ####
+
+
+
+; #############################################
+; func: read_cmos
+; parameter:
+;   cx: loop times.     ds for segment.
+;   si: src index of cmos
+;   di: write index
+clk_read_cmos:
+    push ax
+    push cx
+    push si
+    push di
+read_each:
+    mov al, [ds:si]     ; from ds
+    out 70h, al 
+    in  al, 71h         ; read port
+    
+    ; compute data
+    push cx
+    mov ah, al
+    mov cl, 4
+    shr ah, cl          ; high
+    and al, 0fh         ;  low
+    add ah, 30h	        ; high to ascii
+    add al, 30h         ;  low to ascii
+    
+    mov [ds:di], ah     ; both ds
+    mov [ds:di+1], al
+    inc si
+    add di, 3           ; except '/' or ':'
+    pop cx
+    loop read_each
+
+    pop di
+    pop si
+    pop cx
+    pop ax
+    ret
 
 ;#### func end ####
 

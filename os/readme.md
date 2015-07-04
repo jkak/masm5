@@ -94,6 +94,11 @@ echo ""
         - call restart_sys
         - call delay
         - jmp main_select_lp
+    + je main_do_item_3
+        - call show_clock
+            + clk_read_cmos
+        - call delay
+        - loop inside
         
 
 
