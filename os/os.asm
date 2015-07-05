@@ -136,14 +136,15 @@ ah_ret:
 ; func: main_entrance.  do all thing here
 
 main_entrance:
-    mov si, boot_msg
-    call show_init_str  ; ds:si
-
     call delayL
 
     ; clear screen
     mov cx, 0           ; from row:col = 0:0
     mov dx, 184fh       ;   to row:col = 24:79
+    call int10h_clear_screen
+
+    call delayL
+
     call int10h_clear_screen
 
     ; show select
@@ -218,7 +219,7 @@ select_msg:
 
 
 boot_msg:
-    db 0ah, "Hello, OS world!", 0
+    db "test info: Hello, OS world!", 0
 
 
 
@@ -231,27 +232,33 @@ boot_msg:
 ;##################################
 ; func: show_init_str
 ;   string begin at ds:si, end with NULL
+;   row:col is 10:20
 
 show_init_str:
-    push ax
-    push bx
+    push cx
+    push dx
+    push ds
+    push es
     push si
 
-    mov	ah, 0eh		; show a char
-    mov	bx, 04h		; bh=0 : page no, bl=04h : red color.
-show_init_lp:
-	mov	al, [si]
-    cmp al, 0
-    je show_init_ret
-	int	10h			; show string
-    inc si
-    jmp show_init_lp
+    mov ax, cs          ; src seg
+    mov ds, ax         
+    mov si, boot_msg    ; src offset
+    mov cx, 0b800h      
+    mov es, cx          ; des seg
+    mov cl, 07h
+    mov dh, 10          ; row 10
+    mov dl, 20          ; col 20
 
-show_init_ret:
+    call show_str
+
     pop si
-    pop bx
-    pop ax
+    pop es
+    pop ds
+    pop dx
+    pop cx
     ret
+
 ;#### func end ####
 
 
@@ -754,6 +761,58 @@ read_each:
 ;#### func end ####
 
 
+
+
+; ##############################################
+; sub func: show_str show string end with NULL
+; paramters: 
+;   DS:SI : str_pointer 
+;   ES:   : video segment
+;   CL	  : color, 
+;   DH	  : row(0-24) 0: 0h~9FH, 1: 0A0H~140H
+;   DL    : col(0-79)
+show_str:
+    push ax
+    push bx
+    push cx
+    push si
+    push di
+	
+    ; video pointer
+    mov al, 0A0H	; 160 byte each line.
+    mov bl, dh	    ; row
+    mul bl	        ; MAX result is 4000
+    
+    mov bh, 0	    ; ready for add dl
+    mov bl, dl
+    add ax, bx	    ; add column char offset
+    add ax, bx	    ; add column attr offset
+    mov di, ax	    ; video header pointer
+    mov ah, cl	    ; now ah is color
+    mov cx, 0	    ; CX for jcxz
+    
+show_char:
+    mov cl, [ds:si]
+    jcxz show_done
+    ; display
+    mov al, cl		; char in al, attr in ah
+    mov [es:di], AX	; display char and attr
+    inc si
+    inc di
+    inc di
+    loop show_char
+    
+show_done:
+    pop di
+    pop si
+    pop cx
+    pop bx
+    pop ax
+    ret
+    
+;#### func end ####
+
+; #############################################
 
 
 
