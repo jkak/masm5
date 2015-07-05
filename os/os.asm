@@ -164,6 +164,8 @@ main_select_lp:
     je main_do_item_2   ; restart from system on c:
     cmp dx, 3
     je main_do_item_3   ; show clock 
+    cmp dx, 4
+    je main_do_item_4   ; set  clock 
 
     jmp main_select_lp
 
@@ -178,6 +180,10 @@ main_do_item_2:
 
 main_do_item_3:
     call show_clock_ctrl
+    jmp main_select_lp
+
+main_do_item_4:
+    call set_clock_ctrl
 
 
 main_select_again:
@@ -690,6 +696,95 @@ clk_start:
 
 
 
+
+; #############################################
+; func: set_clock_ctrl set new clock
+set_clock_ctrl:
+    push ax
+    push cx
+    push dx
+
+    ; clear show zone
+    mov cx, 1000h           ; start line
+    mov dx, 114fh
+    call int10h_clear_screen
+
+    mov dh, 04h             ; set color
+    mov dl, ch              ; set start line
+set_clk_ctrl_lp:
+    call show_clock_set
+    call delay
+
+
+set_clk_ctrl_ret:
+    ; clear show zone
+;    mov cx, 1000h           ; start line
+;    mov dx, 114fh
+;    call int10h_clear_screen
+    pop dx
+    pop cx
+    pop ax
+    ret
+
+
+;#### func end ####
+
+
+
+
+; #############################################
+; func: show_clock_set  to show info for set clock
+; parameters:
+;   dh: attr of color for clock
+;   dl: start line
+
+show_clock_set:
+    jmp set_clk_start
+set_time_tips   db 'pls input new date and time as below format:', 0
+set_time_style  db 'yy/mm/dd hh:mm:ss', 0
+set_time_table  db 9, 8, 7, 4, 2, 0
+;                  y  m  d  h  m  second offset of date in cmos
+
+set_clk_start:
+    push ax
+    push cx
+    push dx
+    push si
+    push di
+    push ds
+    push es
+
+    ; show clock string
+    mov ax, cs
+    mov ds, ax
+    mov si, set_time_tips   ; read index of tips
+    mov ax, 0b800h
+    mov es, ax              ; video seg
+    mov cl, dh              ; color
+    mov dh, dl              ; row
+    mov dl, 12              ; col
+    call show_str
+
+    mov si, set_time_style  ; read index of time
+    inc dh
+    add dl, 4
+    call show_str
+
+    pop es
+    pop ds
+    pop di
+    pop si
+    pop dx
+    pop cx
+    pop ax
+    ret
+
+;#### func end ####
+
+
+
+
+
 ; #############################################
 ; func: read_cmos
 ; parameter:
@@ -790,15 +885,6 @@ show_done:
 
 
 
-; 200h sector1
-;    db "12345678"
-;    times 1022-($-$$) db 0   ; fill with 0 to logic sector 1
-;    db "ok;"
-
-; 400h sector2
-    db "ABCDEFGH"
-    times 1534-($-$$) db 0   ; fill with 0 to logic sector 2
-    db "ok"
 
 ; 600h sector3
     db "abcdefgh"
