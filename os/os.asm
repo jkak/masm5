@@ -145,8 +145,6 @@ main_entrance:
 
     call delayL
 
-    call int10h_clear_screen
-
     ; show select
     mov ax, 105h        ; select 1, 5 lines 
 main_select_lp:
@@ -208,8 +206,6 @@ fin:
 ; define data:
 
 select_msg:
-    ;tbl  dw 0, line_4, line_3, line_2, line_1, line_0
-    
     db "Select item to run: (Up|Down)  ", 0
     db "    * reset pc system          ", 0
     db "    * start existed system     ", 0
@@ -248,7 +244,7 @@ show_init_str:
     mov es, cx          ; des seg
     mov cl, 07h
     mov dh, 10          ; row 10
-    mov dl, 20          ; col 20
+    mov dl, 10          ; col 10
 
     call show_str
 
@@ -372,14 +368,12 @@ show_len_end:
 ;   al is num of lines
 
 show_select_item:
-    push ax
-    push bx
     push cx
     push dx
-    push bp
+    push ds
+    push es
     push si
-    push di         ; for backup
-    mov di,ax       ; backup ax
+    push ax
     
     ; clear item lines
     mov cx, 0       ; start line
@@ -388,52 +382,39 @@ show_select_item:
     mov dl, 4fh
     call int10h_clear_screen
 
+    ;#### parameter of show_str
+    mov ax, cs
+    mov ds, ax
     mov si, select_msg  ; select msg addr
+    mov ax, 0b800h
+    mov es, ax
+    mov cl, 07h         ; white color for default
     mov dh, 0h          ; first row at: 0
-    mov dl, 10h         ; first col at: 10h
+    mov dl, 8h          ; first col at: 8h
 
-    mov cx, di
-    mov ch, 0           ; cx is lines
-    mov bx, 0           ; offset for line msg
+    pop ax
 show_select_each_line:
-    push bx             ; line offset
-    push cx             ; lines
-
-    ; check selected line no
-    mov ax, di          ; ah is selected line
-    mov al, 5h
-    sub al, cl          ; al is diff of 5-cx
-    cmp ah, al
+    cmp dh, al          ; al is num of lines
+    jnb show_select_ret
+    cmp dh, ah          ; is selected line?
     je line_equ
-    mov bl, 07h         ; black color
-    jmp line_cmp_end
+    mov cl, 07h         ; white color for default
+    jmp call_show_str
 line_equ:
-    mov bl, 24h         ; red color, green background.
-    call set_cursor
-line_cmp_end:
-    mov di, ax          ; backup again 
-    mov bp, si          ; each line base addr for int 10h
-    call get_str_len    ; length in cx
+    mov cl, 24h         ; red color, green background.
+call_show_str:
+    call show_str
 
-    mov ax, 1300h       ; ah:13h for show string
-    mov bh, 0           ; page 0
-    int	10h		        ; show string
-
-    pop cx
-    pop bx
-
-    inc dh              ; next row to show
-    add si, 20h         ; next line offset
-    loop show_select_each_line
+    add si, 20h
+    inc dh
+    jmp show_select_each_line
 
 show_select_ret:
-    pop di
     pop si
-    pop bp
+    pop es
+    pop ds
     pop dx
     pop cx
-    pop bx
-    pop ax
     ret
 
 ;#### func end ####
