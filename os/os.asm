@@ -5,6 +5,8 @@
 
 ;##############################################
 ; Sector 1 (CHS=001)
+; Sector 1 only has func of sectors2mem, 
+;   and then jmp to main_entrance
 
 org	07c00h		; mbr will be load to 0:7c00h
 
@@ -28,6 +30,7 @@ start:
 ;   ah : sub func no, 0 for read, 1 for write.
 ;   dx : logic sector
 ;   es:bx : memory segment and offset.
+
 sectors2mem:
     mov ax, 0h
     mov es, ax
@@ -155,33 +158,23 @@ main_select_lp:
     call input_select
     cmp dx, 0
     je main_do_item_0   ; only delay
-    nop
     cmp dx, 1
     je main_do_item_1   ; restart current os
-    nop
     cmp dx, 2
     je main_do_item_2   ; restart from system on c:
-    nop
     cmp dx, 3
     je main_do_item_3   ; show clock 
-    nop
 
     jmp main_select_lp
 
 main_do_item_0:
-    nop
     call delay
     jmp main_select_lp
 main_do_item_1:
-    nop
     call restart_sys
-    call delayL
-    jmp main_select_lp
 
 main_do_item_2:
-    nop
     call restart_sys_c
-    call delayL
 
 main_do_item_3:
     call show_clock_ctrl
@@ -545,17 +538,14 @@ in_ret:
 ; func: restart_sys to restart system 
 
 restart_sys:
-    push si
-    mov si, boot_msg
-    call show_init_str  ; ds:si
+    call show_init_str 
     call delayL
 
     push bp
     mov bp, sp
-    mov word [bp+4], 0h      ; modify IP in stack
-    mov word [bp+6], 0ffffh  ; modify CS in stack
+    mov word [bp+2], 0h      ; modify IP in stack
+    mov word [bp+4], 0ffffh  ; modify CS in stack
     pop bp              
-    pop si
     ; now, the top of stack is CS:IP, far return to restart
     retf                
 
@@ -568,11 +558,8 @@ restart_sys:
 ; func: restart_sys_c to restart system on C:
 
 restart_sys_c:
-    push si
-    mov si, boot_msg
-    call show_init_str  ; ds:si
+    call show_init_str
     call delayL
-    pop si
 
     mov ax, 0h
     mov es, ax
