@@ -590,15 +590,13 @@ show_clock_ctrl:
     push cx
     push dx
 
-    ; clear item lines
-    ; ah: selected line, al: lines.     dx: selected item,
-    mov cx, 0               ; start line
-    mov dh, al              ; lines
-    dec dh                  ; end line
-    mov dl, 4fh
+    ; clear show zone
+    mov cx, 1000h           ; start line
+    mov dx, 114fh
     call int10h_clear_screen
 
     mov dh, 04h             ; set color
+    mov dl, ch              ; set start line
 clk_ctrl_lp:
     call show_clock
     call delay
@@ -622,6 +620,11 @@ clk_read_no:
     jmp clk_ctrl_lp
     
 clk_ctrl_ret:
+    ; clear show zone
+    mov cx, 1000h           ; start line
+    mov dx, 114fh
+    call int10h_clear_screen
+
     pop dx
     pop cx
     pop ax
@@ -635,22 +638,23 @@ clk_ctrl_ret:
 ; func: show_clock to show clock from cmos
 ; parameter:
 ;   dh: attr of color for clock
+;   dl: start line
 
 show_clock:
     jmp clk_start
-
-time_style  db 'yy/mm/dd hh:mm:ss$'
+time_tips   db 'ESC for exit, F1 to change color:', 0
+time_style  db 'yy/mm/dd hh:mm:ss', 0
 time_table  db 9, 8, 7, 4, 2, 0
 ;              y  m  d  h  m  second offset of date in cmos
 
 clk_start:
     push ax
-    push bx
     push cx
+    push dx
     push si
     push di
+    push ds
     push es
-    push dx
 
     mov ax, cs
     mov ds, ax
@@ -658,29 +662,27 @@ clk_start:
     mov si, time_table      ; src nidex of cmos
     mov cx, 6h
     call clk_read_cmos
-    
+
+    ; show clock string
+    mov si, time_tips       ; read index of tips
     mov ax, 0b800h
     mov es, ax
-    mov si, time_style      ; read  index of time
-    mov di, 0               ; write nidex of video
-    mov bx, 160*2+30*2      ; row 2, col 30
-    mov cx, 11h	            ; length of time
-    pop dx                  ; reover color
-    mov ah, dh
+    mov cl, dh              ; color
+    mov dh, dl              ; row
+    mov dl, 12              ; col
+    call show_str
 
-; show date time
-clk_show_each:
-    mov al, [ds:si]         ; read from table_style
-    mov [es:di+bx], ax      ; write to  video
-    inc si      
-    add di, 2h 
-    loop clk_show_each
+    mov si, time_style      ; read index of time
+    inc dh
+    add dl, 4
+    call show_str
 
     pop es
+    pop ds
     pop di
     pop si
+    pop dx
     pop cx
-    pop bx
     pop ax
     ret
 
