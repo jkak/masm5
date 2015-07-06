@@ -216,6 +216,12 @@ select_msg:
 boot_msg:
     db "test info: Hello, OS world!", 0
 
+; data about clock
+time_style:
+    db 'yy/mm/dd hh:mm:ss', 0
+time_table:
+    db 9, 8, 7, 4, 2, 0
+;      y  m  d  h  m  second offset of date in cmos
 
 
 
@@ -401,9 +407,15 @@ show_select_each_line:
     jmp call_show_str
 line_equ:
     mov cl, 24h         ; red color, green background.
+    call show_str
+    add dl, ch          ; ch is str len ret frm show_str
+    call set_cursor     ; row:col in dh:dl
+    sub dl, ch          ; recover dl
+    jmp show_add_offset
+
 call_show_str:
     call show_str
-
+show_add_offset:
     add si, 20h
     inc dh
     jmp show_select_each_line
@@ -422,20 +434,14 @@ show_select_ret:
 
 ;###################################
 ; func: set_cursor
-; parameter: al selected line
+; parameter: dh:dl is row:col to set cursor. 
 
 set_cursor:
     push ax
     push bx
-    push dx
-
-    mov dh, al
-    mov dl, 2fh     ; str begin 10h, len 20h
     mov ah, 2       ; set cursor
     mov bh, 0       ; page 0
     int 10h
-
-    pop dx
     pop bx
     pop ax
     ret
@@ -469,6 +475,14 @@ kb_in_ret:
 
 
 
+
+;###################################
+; func: clk_read_kb
+clk_read_kb:
+    nop
+
+
+;#### func end ####
 
 
 
@@ -649,9 +663,6 @@ clk_ctrl_ret:
 show_clock:
     jmp clk_start
 time_tips   db 'ESC for exit, F1 to change color:', 0
-time_style  db 'yy/mm/dd hh:mm:ss', 0
-time_table  db 9, 8, 7, 4, 2, 0
-;              y  m  d  h  m  second offset of date in cmos
 
 clk_start:
     push ax
@@ -682,6 +693,7 @@ clk_start:
     inc dh
     add dl, 4
     call show_str
+    call set_cursor
 
     pop es
     pop ds
@@ -741,9 +753,6 @@ set_clk_ctrl_ret:
 show_clock_set:
     jmp set_clk_start
 set_time_tips   db 'pls input new date and time as below format:', 0
-set_time_style  db 'yy/mm/dd hh:mm:ss', 0
-set_time_table  db 9, 8, 7, 4, 2, 0
-;                  y  m  d  h  m  second offset of date in cmos
 
 set_clk_start:
     push ax
@@ -765,10 +774,14 @@ set_clk_start:
     mov dl, 12              ; col
     call show_str
 
-    mov si, set_time_style  ; read index of time
+    mov si, time_style  ; read index of time
     inc dh
     add dl, 4
     call show_str
+    add dl, 8
+    call set_cursor
+
+;    call clk_read_kb
 
     pop es
     pop ds
@@ -836,6 +849,8 @@ read_each:
 ;   CL	  : color, 
 ;   DH	  : row(0-24) 0: 0h~9FH, 1: 0A0H~140H
 ;   DL    : col(0-79)
+; return: 
+;   CH    : string length
 show_str:
     push ax
     push bx
@@ -855,7 +870,7 @@ show_str:
     mov di, ax	    ; video header pointer
     mov ah, cl	    ; now ah is color
     mov cx, 0	    ; CX for jcxz
-    
+    mov bl, 0       ; as counter of length
 show_char:
     mov cl, [ds:si]
     jcxz show_done
@@ -865,17 +880,28 @@ show_char:
     inc si
     inc di
     inc di
+    inc bl
     loop show_char
     
 show_done:
     pop di
     pop si
     pop cx
+    mov ch, bl      ; ret value in ch
     pop bx
     pop ax
     ret
     
 ;#### func end ####
+
+
+
+; ##############################################
+; sub func: 
+
+
+;#### func end ####
+
 
 ; #############################################
 
