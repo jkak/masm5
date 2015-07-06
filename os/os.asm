@@ -334,28 +334,6 @@ int10h_clear_screen:
 
 
 
-;###################################
-; func: get_str_len
-; ds:si is the addr, end of NULL
-; return cx is the length
-
-get_str_len:
-    push ax
-    push si
-    mov cx, 0       ; for counter
-get_str_len_lp:
-    mov al, [si]
-    cmp al, 0
-    je show_len_end
-    inc cx
-    inc si
-    jmp short get_str_len_lp
-show_len_end:
-    pop si
-    pop ax
-    ret
-;#### func end ####
-
 
 
 ;###################################
@@ -454,16 +432,13 @@ set_cursor:
 ;###################################
 ; func: read_kb  to read keyboard input
 ; return:
-;;;;;;;;;;;;;;   dx: 1 means read success, 0 mean no input
-;   ax: ah: scan code, al ascii. when dx=1
+;   ax: ah: scan code, al ascii. al=0 means no input
 read_kb:
-   ; mov dx, 0h          ; init dx
     mov ah, 1           ; test input
     int 16h             ; scan code in ah, ascii in al
     je kb_in_ignore     ; ZF=1 means Zero, keyboard buf is blank
     mov ah, 0           ; read input 
     int 16h 
-    ;mov dx, 1h
     jmp kb_in_ret
 
 kb_in_ignore:
@@ -478,9 +453,105 @@ kb_in_ret:
 
 ;###################################
 ; func: clk_read_kb
+; parameters:
+;   dh: color,  dl: start line
 clk_read_kb:
-    nop
+    push ax
+clk_get_char:
+    mov ah, 0
+    int 16h
 
+    cmp al, 20h
+    jb clk_not_char	        ; al ascii < 20h
+    mov ah, 0
+    call clk_char_stack	    ; push char in stack
+
+    jmp clk_get_char
+clk_not_char:
+    cmp ah, 0eh	            ; scan code is backspace
+    je clk_char_backspace
+    cmp ah, 1ch	            ; scan code is enter
+    je clk_char_enter
+    jmp clk_get_char
+clk_char_backspace:
+    mov ah, 1
+    call clk_char_stack	    ; pop out stack
+    jmp clk_get_char
+clk_char_enter:
+    mov ax, 0
+    call clk_char_stack	    ; push 0 in stack
+
+    pop ax
+    ret
+
+;#### func end ####
+
+
+
+; #################################
+; func: clk_char_stack  based on time_style
+; parameter
+;	ah: func no. 
+;     0: in  stack, al= in char
+;     1: out stack, al= return char
+
+clk_char_stack:
+	jmp short clk_char_start
+
+clk_table dw clk_char_push, clk_char_pop, clk_char_show
+clk_top   db 0  ; clk_top is the stack top pointer ready to push
+
+clk_char_start:
+    push bx
+    push ds
+    push si
+    push di
+
+    mov bx, cs
+    mov ds, bx
+    mov si, time_style  ; index of time buf
+    mov bx, 0
+    mov bl, ah
+    jmp word [cs:clk_table+bx]
+
+clk_char_push:
+    mov di, clk_top		; clk_top is stack location
+    mov ah, [ds:di]
+    cmp ah, 17          ; max len of stack
+    mov bl, ah          ; pointer
+    jnb last_byte       ; equ or above 17
+    mov [ds:si+bx], al
+    inc byte [ds:di]
+    jmp clk_char_show
+last_byte:
+; the last byte ds:[si+17] is init to NULL. 
+; so it's no use to write NULL again
+; if write non-NULL, this is WRONG. return only. no return error.
+    jmp clk_char_show
+    
+clk_char_pop:
+    mov di, clk_top		; clk_top is stack location
+    mov ah, [ds:di]
+    cmp ah, 0	        ; stack clk_top is blank?
+    je clk_char_ret     ; clk_top is blank, so ret 
+    mov bl, ah
+    mov al,  [ds:si+bx]
+    mov byte [ds:si+bx], " "
+    dec byte [ds:di]
+
+clk_char_show:
+    push dx
+    mov cl, 4           ; color
+    mov dx, 0a0ch       ; dx row:col
+    call show_clock_set
+    pop dx
+
+clk_char_ret:
+    pop di
+    pop si
+    pop ds
+    pop bx
+    ret
 
 ;#### func end ####
 
@@ -611,12 +682,13 @@ show_clock_ctrl:
     push dx
 
     ; clear show zone
-    mov cx, 1000h           ; start line
-    mov dx, 114fh
+    mov cx, 0a00h           ; start line
+    mov dx, 0b4fh
     call int10h_clear_screen
 
-    mov dh, 04h             ; set color
-    mov dl, ch              ; set start line
+    mov cl, 04              ; set color
+    mov dh, ch              ; set start line
+    mov dl, 0ch
 clk_ctrl_lp:
     call show_clock
     call delay
@@ -631,18 +703,18 @@ clk_ctrl_lp:
     jmp clk_read_no
 
 clk_read_f1:
-    inc dh                  ; change color
-    cmp dh, 8h              
+    inc cl                  ; change color
+    cmp cl, 8h              
     jne clk_read_no
-    mov dh, 1h              ; 111B -> 1000B, roll to 001B
+    mov cl, 1h              ; 111B -> 1000B, roll to 001B
 
 clk_read_no:
     jmp clk_ctrl_lp
     
 clk_ctrl_ret:
     ; clear show zone
-    mov cx, 1000h           ; start line
-    mov dx, 114fh
+    mov cx, 0a00h           ; start line
+    mov dx, 0b4fh
     call int10h_clear_screen
 
     pop dx
@@ -657,8 +729,8 @@ clk_ctrl_ret:
 ;###################################
 ; func: show_clock to show clock from cmos
 ; parameter:
-;   dh: attr of color for clock
-;   dl: start line
+;   cl: attr of color for clock
+;   dx: dh:dx is row:col
 
 show_clock:
     jmp clk_start
@@ -677,16 +749,15 @@ clk_start:
     mov ds, ax
     mov di, time_style      ; write index
     mov si, time_table      ; src nidex of cmos
+    mov ax, cx
     mov cx, 6h
     call clk_read_cmos
 
     ; show clock string
+    mov cx, ax              ; cl is color. dh:dl is row:col
     mov si, time_tips       ; read index of tips
     mov ax, 0b800h
     mov es, ax
-    mov cl, dh              ; color
-    mov dh, dl              ; row
-    mov dl, 12              ; col
     call show_str
 
     mov si, time_style      ; read index of time
@@ -717,21 +788,23 @@ set_clock_ctrl:
     push dx
 
     ; clear show zone
-    mov cx, 1000h           ; start line
-    mov dx, 114fh
+    mov cx, 0a00h           ; start line
+    mov dx, 0b4fh
     call int10h_clear_screen
 
-    mov dh, 04h             ; set color
-    mov dl, ch              ; set start line
+    mov dh, ch              ; set color
+    mov dl, 0ch             ; set start line
+    mov cl, 04h
 set_clk_ctrl_lp:
     call show_clock_set
     call delay
 
+    call clk_read_kb
 
 set_clk_ctrl_ret:
     ; clear show zone
-;    mov cx, 1000h           ; start line
-;    mov dx, 114fh
+;    mov cx, 0a00h           ; start line
+;    mov dx, 0b4fh
 ;    call int10h_clear_screen
     pop dx
     pop cx
@@ -747,8 +820,8 @@ set_clk_ctrl_ret:
 ; #############################################
 ; func: show_clock_set  to show info for set clock
 ; parameters:
-;   dh: attr of color for clock
-;   dl: start line
+;   cl: attr of color for clock
+;   dx: dh:dx is row:col
 
 show_clock_set:
     jmp set_clk_start
@@ -759,7 +832,6 @@ set_clk_start:
     push cx
     push dx
     push si
-    push di
     push ds
     push es
 
@@ -769,23 +841,17 @@ set_clk_start:
     mov si, set_time_tips   ; read index of tips
     mov ax, 0b800h
     mov es, ax              ; video seg
-    mov cl, dh              ; color
-    mov dh, dl              ; row
-    mov dl, 12              ; col
     call show_str
 
-    mov si, time_style  ; read index of time
+    mov si, time_style      ; read index of time
     inc dh
     add dl, 4
     call show_str
-    add dl, 8
     call set_cursor
 
-;    call clk_read_kb
 
     pop es
     pop ds
-    pop di
     pop si
     pop dx
     pop cx
