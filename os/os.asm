@@ -454,9 +454,13 @@ kb_in_ret:
 ;###################################
 ; func: clk_read_kb
 ; parameters:
-;   dh: color,  dl: start line
+;   cl: color,  dh:dl is row:col
+
 clk_read_kb:
     push ax
+    push cx
+    push dx
+
 clk_get_char:
     mov ah, 0
     int 16h
@@ -465,8 +469,8 @@ clk_get_char:
     jb clk_not_char	        ; al ascii < 20h
     mov ah, 0
     call clk_char_stack	    ; push char in stack
-
     jmp clk_get_char
+
 clk_not_char:
     cmp ah, 0eh	            ; scan code is backspace
     je clk_char_backspace
@@ -481,6 +485,8 @@ clk_char_enter:
     mov ax, 0
     call clk_char_stack	    ; push 0 in stack
 
+    pop dx
+    pop cx
     pop ax
     ret
 
@@ -494,6 +500,8 @@ clk_char_enter:
 ;	ah: func no. 
 ;     0: in  stack, al= in char
 ;     1: out stack, al= return char
+;   cl: color
+;   dh:dl is row:col
 
 clk_char_stack:
 	jmp short clk_char_start
@@ -503,6 +511,7 @@ clk_top   db 0  ; clk_top is the stack top pointer ready to push
 
 clk_char_start:
     push bx
+    push dx
     push ds
     push si
     push di
@@ -512,6 +521,7 @@ clk_char_start:
     mov si, time_style  ; index of time buf
     mov bx, 0
     mov bl, ah
+    add bl, bl
     jmp word [cs:clk_table+bx]
 
 clk_char_push:
@@ -535,21 +545,24 @@ clk_char_pop:
     cmp ah, 0	        ; stack clk_top is blank?
     je clk_char_ret     ; clk_top is blank, so ret 
     mov bl, ah
+    dec bl              ; pointer to the top data
     mov al,  [ds:si+bx]
     mov byte [ds:si+bx], " "
-    dec byte [ds:di]
+    mov byte [ds:di], bl
 
 clk_char_show:
-    push dx
-    mov cl, 4           ; color
-    mov dx, 0a0ch       ; dx row:col
     call show_clock_set
-    pop dx
+    ; set cursor of next input char for line time_style
+    inc dh
+    add dl, [ds:di]
+    add dl, 4
+    call set_cursor     
 
 clk_char_ret:
     pop di
     pop si
     pop ds
+    pop dx
     pop bx
     ret
 
@@ -799,7 +812,7 @@ set_clk_ctrl_lp:
     call show_clock_set
     call delay
 
-    call clk_read_kb
+    call clk_read_kb        ; paramter: cl, dh:dl
 
 set_clk_ctrl_ret:
     ; clear show zone
