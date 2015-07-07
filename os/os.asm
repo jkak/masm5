@@ -590,9 +590,10 @@ clk_char_push:
     cmp ah, 17          ; max len of stack
     mov bl, ah          ; pointer
     jnb last_byte       ; equ or above 17
+    cmp al, 0           ; when enter, not write
+    je  last_byte
     mov [ds:si+bx], al
     inc byte [ds:di]
-    jmp clk_char_show
 last_byte:
 ; the last byte ds:[si+17] is init to NULL. 
 ; so it's no use to write NULL again
@@ -859,6 +860,16 @@ set_clock_ctrl:
     push ax
     push cx
     push dx
+    push si
+    push ds
+
+    ; read cmos to init time_style buf
+    mov ax, cs
+    mov ds, ax
+    mov di, time_style      ; write index
+    mov si, time_table      ; src index of cmos
+    mov cx, 6h
+    call clk_read_cmos
 
     ; clear show zone
     mov cx, 0a00h           ; start line
@@ -880,6 +891,8 @@ set_clk_ctrl_ret:
     mov cx, 0a00h           ; start line
     mov dx, 0b4fh
     call int10h_clear_screen
+    pop ds
+    pop si
     pop dx
     pop cx
     pop ax
