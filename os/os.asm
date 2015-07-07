@@ -617,6 +617,16 @@ clk_char_show:
     inc dh
     add dl, bl
     mov byte [ds:di], bl
+    mov ah, 0
+    mov al, bl              ; 2, 5, 8, 11 is sep of '/' or ':'
+    inc al                  ; 3, 9 ,9, 12
+    mov bl, 3
+    div bl
+    cmp ah, 0               ; pointer to sep
+    jne set_clk_no_sep
+    add dl, 1
+    inc byte [ds:di]        ; skip sep 
+set_clk_no_sep:
     call set_cursor     
 
 clk_char_ret:
