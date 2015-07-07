@@ -79,26 +79,33 @@ echo ""
 
 * main_entrance
 
-> * call show_init_str 
-> * call delay
-> * call show_select_item        
+> * call delayL
 > * call int10h_clear_screen
+> * call delayL
+> * call show_select_item        
 > * main_select_lp:
     + call show_select_item        
     + call input_select   
+    + je main_do_item_0
+        - call delay
+        - jmp main_select_lp
     + je main_do_item_1
         - call restart_sys
-        - call delay
-        - jmp main_select_lp
     + je main_do_item_2
-        - call restart_sys
-        - call delay
-        - jmp main_select_lp
+        - call restart_sys_c
+            + sec2mem
     + je main_do_item_3
-        - call show_clock
+        - call show_clock_ctrl
+            + call int10h_clear_screen
+            + call show_clock
             + clk_read_cmos
-        - call delay
-        - loop inside
+            + call delay
+    + je main_do_item_4
+        - call set_clock_ctrl
+            + call clk_read_cmos
+            + call show_clock_set
+            + call clk_read_kb
+            + call clk_write_cmos
         
 
 
