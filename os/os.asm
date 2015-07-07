@@ -452,6 +452,60 @@ kb_in_ret:
 
 
 ;###################################
+; func: clk_write_cmos  write time_style to cmos
+clk_write_cmos:
+    push ax
+    push bx
+    push cx
+    push si
+    push di
+    push ds
+
+    mov ax, cs
+    mov ds, ax
+    mov di, time_style      ; offset of write data
+    mov si, time_table      ; offset of table for cmos
+    mov cx, 6h
+
+clk_write_each:
+    mov ax, [ds:di]     ; year 15: al=0x31, ah=0x35 --> 0x15
+    mov bl, ah
+    mov ah, al
+    mov al, bl
+    sub ax, 3030h       ; 0x01, 0x05
+    
+    push cx
+    mov cl, 4
+    shl ah, cl          ; high, 0x10h
+    and al, 00fh        ;  low, 0x05h
+    and ah, 0f0h
+    add ah, al          ; ah: 0x15h
+
+    mov al, [ds:si]     ; offset in table 
+    out 70h, al 
+    mov al, ah
+    out 71h, al         ; write to cmos
+
+    inc si
+    add di, 3           ; except '/' or ':'
+    pop cx
+    loop clk_write_each
+
+    pop ds
+    pop di
+    pop si
+    pop cx
+    pop bx
+    pop ax
+    ret
+
+;#### func end ####
+
+
+
+
+
+;###################################
 ; func: clk_read_kb
 ; parameters:
 ;   cl: color,  dh:dl is row:col
@@ -460,6 +514,12 @@ clk_read_kb:
     push ax
     push cx
     push dx
+
+clk_init_stack:
+    push di
+    mov di, clk_top		; clk_top is stack location
+    mov byte [ds:di], 0
+    pop di
 
 clk_get_char:
     mov ah, 0
@@ -761,7 +821,7 @@ clk_start:
     mov ax, cs
     mov ds, ax
     mov di, time_style      ; write index
-    mov si, time_table      ; src nidex of cmos
+    mov si, time_table      ; src index of cmos
     mov ax, cx
     mov cx, 6h
     call clk_read_cmos
@@ -813,12 +873,13 @@ set_clk_ctrl_lp:
     call delay
 
     call clk_read_kb        ; paramter: cl, dh:dl
+    call clk_write_cmos
 
 set_clk_ctrl_ret:
     ; clear show zone
-;    mov cx, 0a00h           ; start line
-;    mov dx, 0b4fh
-;    call int10h_clear_screen
+    mov cx, 0a00h           ; start line
+    mov dx, 0b4fh
+    call int10h_clear_screen
     pop dx
     pop cx
     pop ax
