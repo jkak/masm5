@@ -570,6 +570,7 @@ clk_table dw clk_char_push, clk_char_pop, clk_char_show
 clk_top   db 0  ; clk_top is the stack top pointer ready to push
 
 clk_char_start:
+    push ax
     push bx
     push dx
     push ds
@@ -586,14 +587,14 @@ clk_char_start:
 
 clk_char_push:
     mov di, clk_top		; clk_top is stack location
-    mov ah, [ds:di]
-    cmp ah, 17          ; max len of stack
-    mov bl, ah          ; pointer
+    mov bl, [ds:di]
+    cmp bl, 17          ; max len of stack
     jnb last_byte       ; equ or above 17
     cmp al, 0           ; when enter, not write
     je  last_byte
     mov [ds:si+bx], al
-    inc byte [ds:di]
+    inc bl
+    mov byte [ds:di], bl
 last_byte:
 ; the last byte ds:[si+17] is init to NULL. 
 ; so it's no use to write NULL again
@@ -602,10 +603,9 @@ last_byte:
     
 clk_char_pop:
     mov di, clk_top		; clk_top is stack location
-    mov ah, [ds:di]
-    cmp ah, 0	        ; stack clk_top is blank?
+    mov bl, [ds:di]
+    cmp bl, 0	        ; stack clk_top is blank?
     je clk_char_ret     ; clk_top is blank, so ret 
-    mov bl, ah
     dec bl              ; pointer to the top data
     mov al,  [ds:si+bx]
     mov byte [ds:si+bx], " "
@@ -615,8 +615,8 @@ clk_char_show:
     call show_clock_set
     ; set cursor of next input char for line time_style
     inc dh
-    add dl, [ds:di]
-    add dl, 4
+    add dl, bl
+    mov byte [ds:di], bl
     call set_cursor     
 
 clk_char_ret:
@@ -625,6 +625,7 @@ clk_char_ret:
     pop ds
     pop dx
     pop bx
+    pop ax
     ret
 
 ;#### func end ####
@@ -836,7 +837,6 @@ clk_start:
 
     mov si, time_style      ; read index of time
     inc dh
-    add dl, 4
     call show_str
     call set_cursor
 
@@ -932,7 +932,6 @@ set_clk_start:
 
     mov si, time_style      ; read index of time
     inc dh
-    add dl, 4
     call show_str
     call set_cursor
 
