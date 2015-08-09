@@ -9,3 +9,4 @@
 
 rm -vf ./*.EXE  ./*.OBJ
 
+rm -vf ./c/[1-9]*.EXE  ./c/*.OBJ

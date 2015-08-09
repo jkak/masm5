@@ -1,17 +1,24 @@
 
+
+
 ## 研究实验1 simple.c
 
-基于之前在linux下使用dosbox环境学习汇编。这部分研究实验也如此。只需要将tc2.0的整个文件复制到当前目录，命名为./tc/即可。这样在./run_dos.sh启动dosbox后，即可以直接使用tc了。
+基于之前在linux下使用dosbox环境学习汇编。这部分研究实验也如此。只需要将windows下的tc2.0的整个文件目录复制到当前目录，命名为./tc/即可。这样在./run_dos.sh启动dosbox后，即可以直接使用tc了。
 
+为了研究tc对编译文件的依赖，我们另建一个干净的目录来测试。
 ```bash
+mkdir c/LIB/ -p
+cp tc/TC.EXE  ./c/
 ./run_dos.sh
 ```
- run tc in dosbox
-```bat
-c:\>tc\tc.exe
-```
 
-在述启动的tc软件中，编写如下simple.c文件，编译后debug。
+run tc in dosbox
+```bat
+c:\>cd c\
+c:\>c>tc.exe
+```
+在上述启动的tc环境中，在菜单项“Options”的“Directories”中，所有的路径都设置为“LIB\”。这个目录即上面建立的c/LIB/目录，目前是空的。再“Save options”保存。
+再在c目录下编写如下1simple.c文件。
 
 ```c
 main()
@@ -19,9 +26,22 @@ main()
     printf("hello world!\n");
 }
 ```
-debug如下：
+之后编译到目标文件。Compile --> compile to OBJ。编译成功。 在c目录下可以看到新生成的1simple.obj文件。再使用。Compile --> Link EXE file生成exe文件。编译失败。
+此时提示"Unable to open input file 'C0S.OBJ"，
+按如下方式拷贝c0s.obj文件后，CTRL+F4刷新dosbox后再编译，提示需要UMU.LIB文件。
+重复如下动作，依次需要依赖如下文件：MATHS.LIB, GRAPHICS.LIB, CS.LIB。当如下5个文件都拷贝到miniTc时，编译成功。
+```bash
+cd masm5/c/LIB/
+cp ../tc/LIB/C0S.OBJ ./
+cp ../tc/LIB/EMU.LIB ./
+cp ../tc/LIB/MATHS.LIB ./
+cp ../tc/LIB/GRAPHICS.LIB  ./
+cp ../tc/LIB/CS.LIB  ./
+```
+
+编译后debug。debug如下：
 ```bat
-c:>tools\debug.exe simple.exe
+c:>tools\debug.exe 1simple.exe
 u  cs:01f0
 ```
 
@@ -39,6 +59,7 @@ ret
 ```
 
 其中的call即在调用printf函数，其中的194h应是printf中那个字符串的首地址。只是很奇怪，没有找到那段字符串。
+
 
 
 ## 研究实验2 register
@@ -87,6 +108,7 @@ ret
 
 01fah是main函数本身的入口地址。0194h是要打印的串，也就是说，给函数传参数时，是从右向左压栈的。这样函数内出栈参数时，正好是从左向右顺序的。
 
+### 子函数调用2ur2.c
 
 ```c
 void f(void)
@@ -103,7 +125,10 @@ main()
 }
 ```
 
-编译后debug可以看到，有两个函数程序。主函数中通过call 01fah来调试的f函数。
+编译后debug可以看到，有两个函数程序。1fah地址处是f函数，之后的203地址处才是主函数。主函数中通过call 01fah来调用的f函数。
+
+
+
 
 
 
@@ -196,6 +221,11 @@ pop bp
 ret
 ret
 ```
+
+
+
+
+
 
 
 ### 全局变量
@@ -399,28 +429,6 @@ RET
 ```
 
 通过将ip指向新的01fah，执行，调用malloc后，申请的地址空间通过AX返回。
-
-## 不用main函数返回
-4f.c代码：
-```c
-f()
-{
-    *(char far *)(0xb8000000+160*10+80) = 'a';
-    *(char far *)(0xb8000000+160*10+81) = 2;
-}
-```
-汇编代码。在tc只连接时出错。
-Linker Error:Undefined symbol ‘_main’in module C0S（未定义的符号_main在模块C0S中）。说明c语言的入口函数main是被C0S.obj调用的。
-
-使用tools\link.exe  4f.obj 生成可执行文件。再debug时，程序并没有像平常有main的函数那样，代码开始于01fah地址。
-
-将上述的代码，f() 改为main()，再编译。主体代码出现在01fah地址了。f()编译后只有541Byte.而main()编译后有4k多。
-
-
-
-
-
-
 
 
 
