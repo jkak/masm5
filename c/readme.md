@@ -431,4 +431,111 @@ RET
 通过将ip指向新的01fah，执行，调用malloc后，申请的地址空间通过AX返回。
 
 
+## 不用main函数编程
+4f.c代码：
+```c
+f()
+{
+    *(char far *)(0xb8000000+160*10+80) = 'a';
+    *(char far *)(0xb8000000+160*10+81) = 2;
+}
+```
+汇编代码。在tc中，commpile时正常，但在Linker时出错。
+Linker Error:Undefined symbol ‘_main’in module C0S（未定义的符号_main在模块C0S中）。说明c语言的入口函数main是被C0S.obj调用的。
+
+使用tools\link.exe  4f.obj 生成可执行文件。大小仅为541Byte。再debug时，程序并没有像平常有main的函数那样代码开始于01fah地址。而是直接从0号偏移地址开始即相关代码如下：
+```asm
+push bp     ; begin at cs:0
+mov bp, sp
+mov bx, b800
+mov es, bx
+mov bx, 0690
+es:
+mov byte ptr [bx], 61
+mov bx, b800
+mov es, bx
+mov bx, 0691
+es:
+mov byte ptr [bx], 02
+pop bp
+ret
+```
+
+将上述的代码，f() 改为main()，再编译。主体代码出现在01fah地址了。f()编译后只有541Byte.而main()编译后有4k多。
+main()编译成4m.exe后，在偏移为11ah处有call 01fa，从而进入主函数。在偏移地址1fah处的代码即4f.exe中的代码。
+
+### 编译c0s.obj
+```asm
+cd c\
+..\tools\link.exe  lib\c0s.obj
+..\tools\debug.exe c0s.exe
+# 在另一个dosbox窗口中对比观察。
+..\tools\debug.exe 4m.exe
+```
+c0s.exe, 4m.exe两个文件在debug观察时。
+第一条指令对dx的赋值不同。前者是078C, 后者是07C3。
+后面一大段相同。至008c地址开始，前者使用[0000]内存地址，后者使用[019C]，附近亦有相应变化。
+至于到了11A地址，前者直接call 11D，此调用相当于直接继续执行下一个地址的指令。 后者则直接是call 1FA。进入main函数。
+
+经过书上相关分析，开发系统提供了c程序所必须的初始化和程序返回等相关程序，这些程序放在相关.obj文件中，这些程序和用户写的程序编译后的.obj文件进行连接，用户程序才可正确运行。运行时由c0s.obj文件中的程序调用main函数来运行用户程序。
+
+通过这些分析，我们只要重写一个c0s.obj文件即可不用main函数编程。
+
+### 仿造c0s.obj
+c0s.asm代码如下。
+```asm
+assume cs:code
+
+data segment
+    db  128 dup (0)
+data ends
+
+code segment
+start:  
+    move ax, data
+    mov ds, ax
+    mov ss, ax
+    mov sp, 128
+
+    call s
+    int 21h
+s:
+code ends
+end start
+```
+
+编译：
+```dos
+c:\c> ..\dos\masm.exe c0s.asm
+```
+
+将上述生成的c0s.obj临时代替lib\c0s.obj文件。
+此时再在tc.exe 4f.c中编译时，仅提供“No stack”。已经可以生成4f.exe文件了。并且可以执行输出正常结果。debug查看代码如下。
+
+```asm
+mov ax, 076c
+mov ds, ax
+mov ss, ax
+mov sp, 0080
+call 0012
+mov ax, 4c00
+int 21
+push bp     ; addr of 12h
+mov bp, sp
+mov bx, b800
+mov es, bx
+mov bx, 0690
+es:
+mov byte ptr [bx], 61
+mov bx, b800
+mov es, bx
+mov bx, 0691
+es:
+mov byte ptr [bx], 02
+pop bp
+ret
+```
+
+恢复LIB/C0S.OBJ文件。
+
 
