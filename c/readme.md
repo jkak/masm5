@@ -539,3 +539,153 @@ ret
 恢复LIB/C0S.OBJ文件。
 
 
+
+
+## 接收不定数量参数
+编写5a.c代码。
+
+```c
+void showchar(char a, int b);
+
+main()
+{
+    showchar('a', 2);
+}
+
+void showchar(char a, int b)
+{
+    *(char far *) (0xb8000000+160*10+80) = a;
+    *(char far *) (0xb8000000+160*10+81) = b;
+}
+```
+
+通过debug看如何给函数showchar传递参数。
+
+```asm
+push bp
+mov bp, sp
+mov ax, 0002
+push ax
+mov al 61
+push ax
+call 020b
+pop cx
+pop cx
+pop bp
+ret
+
+push bp
+mov bp, sp
+mov al, [bp+04]
+mov bx, b800
+mov es, bx
+mov bx, 0690
+es:
+mov [bx], al
+
+mov al, [bp+06]
+mov bx, b800
+mov es, bx
+mov bx, 0691
+es:
+mov [bx], al
+pop bp
+ret
+ret
+```
+从上可以看出，c中调用函数是通过栈传递参数的，调用前将参数依次从右往左入栈。
+参数在函数中是局部变量，类似于创建局部变量，等价于在子程序调用前为其创建局部变量。不同之处是子程序里局部变量通过保存和恢复sp寄存器来释放局部变量空间，参数的局部变量必须通过调用完成后多次调用pop操作来释放栈空间。
+
+
+### 不定长参数
+```c
+void showchar(int, int, ...);
+
+main()
+{
+    showchar(8, 2, 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h');
+}
+
+void showchar(int n, int color,...)
+{
+    int a;
+    for (a=0; a!= n; a++)
+    {
+        *(char far *) (0xb8000000+160*10+80+a+a) = *(int *)(_BP+8+a+a);
+        *(char far *) (0xb8000000+160*10+81+a+a) = color;
+    }
+}
+```
+可见，函数是通过第一个参数来传递变长部份的长度。在函数内部，则根据参数的个数，使用sp＋偏移的方式来访问。
+
+注意for循环的实现方式。
+```asm
+jmp 027E
+# main loops
+# ...
+# end of main loops 
+
+inc si
+cmp si, [bp+04]     #  addr 027E
+jnz 0235
+# end of for
+```
+其中实现显存地址（0xb8000000+160*10+80+a+a）加法，汇编如下（其中SI为循环体中的a变量）：
+```asm
+mov ax, si
+cwd
+push dx
+push ax
+mov ax, si
+cwd
+pop bx      ; bx = ax, 是si（即a）的低位
+pop cx      ; cx = dx, 扩展成32位的高16位
+add bx, ax  ; 实现a＋a的低位 
+adc cx, dx  ; 实现a＋a的高位
+add bx, 0690    ；160＊10＋80＝1680＝0x690H
+adc cx, b800    ；高位
+mov es, cx
+```
+
+
+
+### 分析printf函数传递参数
+观察printf函数的调用。
+```C
+void main()
+{
+    printf("some char: %c, %c, %c", 'x', 'y', 'z');
+    printf("some int : %d, %d", 63, 127);
+}
+```
+观察主函数的内容如下：
+```asm
+push 007A   # 'z'
+push 0079   # 'y'
+push 0078   # 'x'
+push 0194   # string 
+call 0ADB   # printf
+
+add sp, +08
+push 007F   # 127
+push 003F   # 63
+push 01AA   # string
+call 0ADB   # printf
+add sp, +06
+pop bp
+ret
+
+```
+通过上面的分析，0194及01AA地址应该都是存在要打印的格式化字符串的首地址。且在DS段中。使用g 1fa来执行进入到main函数。再使用d ds:194, d ds:1aa分别查看两个地址段的内容，确认就是格式串。并且串是以0结束的。
+如"some int : %d, %d"对应为：736f 6d65 20 696e 74 203a 20 25 64 2c 25 64 00 00 00 00. 其中2564即对应一个%d。2564的数量即对应了数字的个数。
+
+至于实现简易的printf函数。可以仿照前面的showstr函数，第一个参数用来表示可变参数的个数。函数内部的基本逻辑是：
+> * 从格式化字符串开始扫描，如果不是％，则直接输出。
+> * 如果是％，则读取下一个字符，确认是c or d
+>> * 是c：直接输出对应的变量中的字符
+>> * 是d：需要将对应的变量中的数，转换成要输出的每一位数字
+
+代码略。
+
+
+
