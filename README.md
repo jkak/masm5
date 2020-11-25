@@ -8,6 +8,16 @@
 [Cmd Markdown编译器](https://www.zybuluo.com/mdeditor)
 
 
+# 进阶介绍
+
+学习完本书后，我建议你学习如下两本书，
+* 李忠的《X86汇编语言 从实模式到保护模式》，笔记参考：https://github.com/jkak/orangeS
+* 于渊的《orange'S 一个操作系统的实现》，笔记参考：https://github.com/jkak/x86asm
+
+这两本书，我都花大力气整理了笔记，跑通了相关代码，特别是对CPU的相关寄存器变化、处理流程等知识点，画了很多详图进行说明。希望对你有所帮助。
+ 
+
+
 # 运行环境
 
 由于本人主要使用Linux。故所有代码在linux下编辑和调试。
