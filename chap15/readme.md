@@ -3,7 +3,7 @@
 
 键盘输入时的中断过程。
 
-![keyboard_int9](https://github.com/jkak/masm5/blob/master/chap15/keyboard_in.png)
+![keyboard_int9](keyboard_in.png)
 
 ### 15.4 显示a-z，ESC改变颜色
 
