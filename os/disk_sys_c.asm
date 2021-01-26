@@ -1,5 +1,5 @@
 ; design a OS!
-; author : jungle85gopy
+; author : jkak
 ; date   : 2015.06.30
 
 

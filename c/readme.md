@@ -283,7 +283,7 @@ ret
 ```
 其中的sub sp, +06，是空出6个栈空间，用来存放局部变量。相当于申请存储空间。栈地址是从高向低方向的。因此sub之后，sp指向的栈顶下面空了6个byte。因为bp的值并没有sub，还是原来的栈顶。其-2即在原栈顶存放b3。定义的顺序是b1, b2, b3，压栈顺序是b3, b2, b1。
 
-![bp-stack](https://github.com/jungle85gopy/masm5/blob/master/c/bp-stack.png)
+![bp-stack](https://github.com/jkak/masm5/blob/master/c/bp-stack.png)
 
 从上可见，函数开始的push bp, mov bp, sp，是用来传递局部变量的。以方便修改栈空间。程序结束时，mov sp, bp，将sp的值改回原值，销毁局部变量。
 

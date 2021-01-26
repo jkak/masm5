@@ -2,7 +2,7 @@
 #　第十七章
 更新版的键盘输入读取流程图。
 
-![keyboard_input](https://github.com/jungle85gopy/masm5/blob/master/chap17/keyboard_in.png)
+![keyboard_input](https://github.com/jkak/masm5/blob/master/chap17/keyboard_in.png)
 
 ## 输入rgb改变屏幕颜色 rgb_7ch.asm
 通过BIOS的int 16h中断，来读到键盘的输入。
